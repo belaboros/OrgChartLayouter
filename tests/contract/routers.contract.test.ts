@@ -39,7 +39,7 @@ describe('router contract', () => {
                   expect(p.toId).toBe(e.child.id);
                   const segs = parsePath(p.d);
                   expect(segs[0].cmd).toBe('M');
-                  expect(segs.every((s) => 'MLQ'.includes(s.cmd))).toBe(true);
+                  expect(segs.every((s) => 'MLQCA'.includes(s.cmd))).toBe(true);
                   const all = segs.flatMap((s) => s.pts);
                   expect(all.every((q) => Number.isFinite(q.x) && Number.isFinite(q.y))).toBe(true);
                   expect(near(all[0].x, e.from.x) && near(all[0].y, e.from.y), `start of ${p.fromId}->${p.toId}`).toBe(true);

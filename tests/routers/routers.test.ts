@@ -24,8 +24,8 @@ const tree = group([
 ]);
 
 describe('registry', () => {
-  it('has the three routers with schemas', () => {
-    expect(routers.map((r) => r.id)).toEqual(['straight', 'orthogonal-elbow', 'orthogonal-bus']);
+  it('has the routers with schemas', () => {
+    expect(routers.map((r) => r.id)).toEqual(['straight', 'orthogonal-elbow', 'orthogonal-bus', 'curved', 'radial-arc']);
     expect(findPlugin(routers, 'straight')!.optionsSchema).toEqual([]);
     expect(findPlugin(routers, 'orthogonal-elbow')!.optionsSchema.map((s) => s.key)).toEqual(['cornerRadius']);
     expect(findPlugin(routers, 'orthogonal-bus')!.optionsSchema.map((s) => s.key)).toEqual(['cornerRadius', 'trunkPosition']);

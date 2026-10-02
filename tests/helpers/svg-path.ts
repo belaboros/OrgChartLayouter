@@ -1,6 +1,6 @@
 import type { Point } from '../../src/plugins/types';
 
-export interface PathSegment { cmd: 'M' | 'L' | 'Q' | 'C' | 'A'; pts: Point[] }
+export interface PathSegment { cmd: 'M' | 'L' | 'Q' | 'C' | 'A'; pts: Point[]; /** A only: rx ry rotation largeArc sweep x y */ args?: number[] }
 
 /** Parses absolute M/L/Q/C/A path data; `pts` are the command's points, the last is the endpoint. */
 export function parsePath(d: string): PathSegment[] {
@@ -14,7 +14,7 @@ export function parsePath(d: string): PathSegment[] {
     } else {
       for (let i = 0; i + 1 < nums.length; i += 2) pts.push({ x: nums[i], y: nums[i + 1] });
     }
-    out.push({ cmd, pts });
+    out.push(cmd === 'A' ? { cmd, pts, args: nums.slice(0, 7) } : { cmd, pts });
   }
   return out;
 }

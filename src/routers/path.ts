@@ -5,11 +5,11 @@ export const cornerRadiusSpec: OptionSpec = {
 };
 
 /** Up to 3 decimals, no trailing zeros, never "-0". */
-function num(n: number): string {
+export function num(n: number): string {
   const r = Math.round(n * 1000) / 1000;
   return String(r === 0 ? 0 : r);
 }
-const pt = (p: Point) => `${num(p.x)} ${num(p.y)}`;
+export const pt = (p: Point) => `${num(p.x)} ${num(p.y)}`;
 
 /** Absolute `M`/`L` path through the points; interior corners are cut by `cornerRadius` and joined by a `Q`. */
 export function polylinePath(points: Point[], cornerRadius: number): string {
