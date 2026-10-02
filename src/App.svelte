@@ -2,6 +2,7 @@
   import Editor from './ui/Editor.svelte';
   import Chart from './ui/Chart.svelte';
   import MessageBar from './ui/MessageBar.svelte';
+  import Sidebar from './ui/Sidebar.svelte';
 </script>
 
 <div class="app">
@@ -11,7 +12,7 @@
     <MessageBar />
   </div>
   <Chart />
-  <div class="sidebar" data-testid="sidebar"></div>
+  <div class="sidebar" data-testid="sidebar"><Sidebar /></div>
 </div>
 
 <style>
@@ -28,5 +29,5 @@
     border-bottom: 1px solid #e5e7eb; background: #f9fafb; font-size: 14px;
   }
   .editor-col { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; border-right: 1px solid #e5e7eb; }
-  .sidebar { border-left: 1px solid #e5e7eb; background: #f9fafb; }
+  .sidebar { border-left: 1px solid #e5e7eb; background: #f9fafb; overflow-y: auto; }
 </style>
