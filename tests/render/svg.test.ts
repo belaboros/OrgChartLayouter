@@ -29,10 +29,12 @@ describe('renderSceneMarkup', () => {
     expect(m).not.toContain('badge');
     expect(m).toContain('<title>A</title>');
   });
-  it('badge is centred on the top-right corner and sized to the text', () => {
-    // rect 0,0,40x20 -> corner (40,0); "+12" = 3 chars at fontSize 14 -> w = 0.6*14*3+8 = 33.2, h = 14
+  it('badge is centred on the top-right corner and sized to its own 10 px text', () => {
+    // rect 0,0,40x20 -> corner (40,0); "+12" = 3 chars at the badge's 10 px -> w = 0.6*10*3+8 = 26, h = 14
     const m = renderSceneMarkup(scene([node({ hiddenDescendants: 12 })]));
-    expect(m).toContain('<rect x="23.4" y="-7" width="33.2" height="14" rx="3"/>');
+    expect(m).toContain('<rect x="27" y="-7" width="26" height="14" rx="3"/>');
+    const big = { ...scene([node({ hiddenDescendants: 12 })]), style: { fontSize: 32, lineWidth: 1.5, palette: ['#111'] } };
+    expect(renderSceneMarkup(big)).toContain('<rect x="27" y="-7" width="26" height="14" rx="3"/>');
     expect(m).toContain('<text x="40" y="0" text-anchor="middle" dominant-baseline="central">+12</text>');
   });
   it('badge uses the corner of a circle shape box', () => {
@@ -81,6 +83,7 @@ describe('renderSvgDocument', () => {
     expect(d).toContain('width="140" height="140"');
     expect(d).toContain('<style>');
     expect(d).toContain('font-family:system-ui, sans-serif;font-size:14px');
+    expect(d).toContain('.badge text{fill:#fff;font-size:10px}');
     expect(d.endsWith('</svg>')).toBe(true);
     expect(d).toContain(renderSceneMarkup(scene([node({})])));
   });
@@ -89,5 +92,24 @@ describe('renderSvgDocument', () => {
     const d = renderSvgDocument(s);
     expect(d).toContain('viewBox="-10 -25 70 90"');
     expect(d).toContain('width="70" height="90"');
+  });
+  it('viewBox also covers a badge that sticks out past the top-right of bounds', () => {
+    // node flush with the bounds' top-right corner (100,0); "+12" badge spans x 87..113, y -7..7
+    const s = scene([node({ hiddenDescendants: 12, shape: { kind: 'rect', x: 60, y: 0, w: 40, h: 20 } })]);
+    const d = renderSvgDocument(s);
+    const [vx, vy, vw, vh] = d.match(/viewBox="([^"]+)"/)![1].split(' ').map(Number);
+    const badge = d.match(/<g class="badge"><rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/)!.slice(1).map(Number);
+    expect(badge).toEqual([87, -7, 26, 14]);
+    expect(badge[0]).toBeGreaterThanOrEqual(vx);
+    expect(badge[1]).toBeGreaterThanOrEqual(vy);
+    expect(badge[0] + badge[2]).toBeLessThanOrEqual(vx + vw);
+    expect(badge[1] + badge[3]).toBeLessThanOrEqual(vy + vh);
+    // bounds stay covered, and the 20 px margin is kept around the badge
+    expect([vx, vy, vw, vh]).toEqual([-20, -27, 153, 147]);
+    expect(d).toContain('width="153" height="147"');
+  });
+  it('viewBox ignores badges of nodes without hidden teams', () => {
+    const s = scene([node({ shape: { kind: 'rect', x: 60, y: 0, w: 40, h: 20 } })]);
+    expect(renderSvgDocument(s)).toContain('viewBox="-20 -20 140 140"');
   });
 });
