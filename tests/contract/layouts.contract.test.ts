@@ -7,6 +7,9 @@ import { fakeCtx } from '../helpers/fake-measure';
 import { CONTRACT_TREES } from '../helpers/trees';
 import { optionVariants } from '../helpers/variants';
 import { contains, overlaps } from '../helpers/geometry';
+import { shapeRect, unionRects } from '../../src/geometry/rect';
+
+const EPS = 0.5;
 
 interface Src { node: TeamNode; depth: number; parentId: string | null }
 
@@ -46,6 +49,15 @@ describe('layout contract', () => {
               const boundsShape = { kind: 'rect' as const, ...result.bounds };
               for (const key of ['x', 'y', 'w', 'h'] as const) expect(Number.isFinite(result.bounds[key])).toBe(true);
 
+              if (result.nodes.length > 0) {
+                expect(result.bounds.w).toBeGreaterThan(0);
+                expect(result.bounds.h).toBeGreaterThan(0);
+                const u = unionRects(result.nodes.map((n) => shapeRect(n.shape)));
+                for (const key of ['x', 'y', 'w', 'h'] as const) {
+                  expect(Math.abs(result.bounds[key] - u[key]), `bounds.${key} is not the union`).toBeLessThanOrEqual(EPS);
+                }
+              }
+
               for (const n of result.nodes) {
                 const src = byId.get(n.id);
                 expect(src, `unknown id ${n.id}`).toBeDefined();
@@ -63,6 +75,14 @@ describe('layout contract', () => {
                   [n.label.x, n.label.y, n.label.rotate].every(Number.isFinite),
                   `label of ${n.id} is not finite`,
                 ).toBe(true);
+                const sh = n.shape;
+                if (sh.kind === 'rect') {
+                  const min = result.hasEdges ? 0 : -1;
+                  expect(sh.w >= 0 && sh.h >= 0, `${n.id} negative size`).toBe(true);
+                  if (min === 0) expect(sh.w > 0 && sh.h > 0, `${n.id} degenerate rect`).toBe(true);
+                } else {
+                  expect(sh.r, `${n.id} radius`).toBeGreaterThan(0);
+                }
                 expect(contains(boundsShape, n.shape), `${n.id} outside bounds`).toBe(true);
               }
 
