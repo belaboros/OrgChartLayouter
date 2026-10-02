@@ -1,9 +1,10 @@
-import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy';
+import { treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy';
 import type { TeamNode, TeamTree } from '../model/types';
 import type { Ctx, NodeLayoutPlugin, NodeLayoutResult, PlacedNode, Rect } from '../plugins/types';
 import { getNumber, getString } from '../plugins/options';
 import { unionRects } from '../geometry/rect';
 import { BOX_PAD_X, boxFor, fitLabel } from './label';
+import { SIZING_OPTION, weightedHierarchy, type Datum } from './containment';
 
 export const ASPECTS: Record<string, number> = {
   '16:9': 16 / 9,
@@ -13,7 +14,6 @@ export const ASPECTS: Record<string, number> = {
 };
 
 interface Sized { team: TeamNode; w: number; h: number; kids: Sized[]; offsets: { x: number; y: number }[] }
-interface Datum { team?: TeamNode; weight: number; children?: Datum[] }
 
 /** Greedy row wrapping in YAML order. Returns child offsets and the content size. */
 function wrap(items: { w: number; h: number }[], padding: number, aspect: number) {
@@ -55,17 +55,7 @@ export const nestedRects: NodeLayoutPlugin = {
   id: 'nested-rects',
   name: 'Nested rectangles',
   optionsSchema: [
-    {
-      key: 'sizing',
-      label: 'Sizing',
-      type: 'select',
-      choices: [
-        { value: 'fit', label: 'Fit to content' },
-        { value: 'leaf-count', label: 'By leaf count' },
-        { value: 'equal', label: 'Equal shares' },
-      ],
-      default: 'fit',
-    },
+    SIZING_OPTION,
     { key: 'padding', label: 'Padding', type: 'number', min: 0, max: 40, step: 1, default: 8 },
     {
       key: 'aspect',
@@ -110,14 +100,7 @@ export const nestedRects: NodeLayoutPlugin = {
       };
       tops.forEach((t, i) => emit(t, 1, null, offsets[i].x, offsets[i].y));
     } else if (tree.roots.length > 0) {
-      const toDatum = (t: TeamNode, weight: number): Datum => ({
-        team: t,
-        weight,
-        children: t.children.map((c) => toDatum(c, weight / t.children.length)),
-      });
-      const rootDatum: Datum = { weight: 1, children: tree.roots.map((t) => toDatum(t, 1 / tree.roots.length)) };
-      const root = hierarchy<Datum>(rootDatum, (d) => d.children && d.children.length ? d.children : undefined);
-      root.sum((d) => (d.children && d.children.length ? 0 : sizing === 'equal' ? d.weight : 1));
+      const root = weightedHierarchy(tree, sizing);
       let leafArea = 0;
       root.leaves().forEach((l) => {
         const b = boxFor(l.data.team!.name, ctx);
