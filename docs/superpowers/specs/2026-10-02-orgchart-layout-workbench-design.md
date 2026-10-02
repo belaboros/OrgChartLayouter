@@ -18,6 +18,7 @@ The app is meant to grow: adding a node layout, anchor rule or edge router is a 
 - A `*.teams.yaml` file can be loaded from the local file system, edited in the built-in editor, and saved.
 - The chart redraws live while typing. Invalid input never blanks the chart.
 - Every combination of node layout × anchor × edge router can be selected and rendered.
+- The user can limit how many levels are drawn (default: unlimited), for example to see only the top 3 levels of a large organization.
 - The current view can be exported as a self-contained SVG.
 - A new plugin is picked up by the UI and by the contract tests without touching either.
 - A full redraw of 150 teams completes in under 50 ms (target, not a gate).
@@ -40,7 +41,7 @@ There is no hard upper limit. Subtree collapsing is out of scope for v1.
 - Any data on a team besides its name (no colors, owners or headcounts in the file).
 - PNG and PDF export.
 - Server, accounts, sharing, or HR-system integration.
-- Collapse/expand of subtrees.
+- Collapse/expand of individual subtrees. Only the global depth limit (section 3.1) is in scope.
 
 ## 2. Input format
 
@@ -67,7 +68,7 @@ Rules:
 
 ```
  .teams.yaml ─┐
- editor text ─┴─► parse ─► TeamTree ─► Node layout ─► Anchors ─► Edge router ─► SVG renderer ─► canvas / export
+ editor text ─┴─► parse ─► TeamTree ─► Depth limit ─► Node layout ─► Anchors ─► Edge router ─► SVG renderer ─► canvas / export
 ```
 
 Tech stack: TypeScript, Vite (static build), Svelte (UI), CodeMirror 6 (editor), `yaml` package (parsing with line numbers), d3-hierarchy and d3-flextree (layout algorithms), Vitest (unit and contract tests), Playwright (smoke tests).
@@ -81,7 +82,7 @@ Tech stack: TypeScript, Vite (static build), Svelte (UI), CodeMirror 6 (editor),
 | `layouts/`  | Node layout plugins and their registry. | `model`, d3 |
 | `anchors/`  | Anchor plugins and their registry. | `layouts` types |
 | `routers/`  | Edge router plugins and their registry. | `anchors` types |
-| `pipeline/` | Runs layout → anchors → router and catches plugin errors. | the three plugin modules |
+| `pipeline/` | Applies the depth limit, runs layout → anchors → router, and catches plugin errors. | `model`, the three plugin modules |
 | `render/`   | Scene → SVG. Shared by the on-screen chart and export. | pipeline types |
 | `ui/`       | Svelte components and the app store. | everything above |
 
@@ -96,7 +97,7 @@ type Shape =
   | { kind: 'circle'; cx: number; cy: number; r: number }
   | { kind: 'dot'; cx: number; cy: number; r: number };
 
-interface PlacedNode { id: string; name: string; depth: number; parentId?: string; shape: Shape; label: LabelPlacement }
+interface PlacedNode { id: string; name: string; depth: number; parentId?: string; hiddenDescendants: number; shape: Shape; label: LabelPlacement }
 interface NodeLayoutResult { nodes: PlacedNode[]; bounds: Rect; direction: 'down' | 'right' | 'outward' | 'none'; hasEdges: boolean }
 
 interface AnchorPoint { x: number; y: number; side: 'top' | 'bottom' | 'left' | 'right' | 'center' | 'boundary' }
@@ -119,6 +120,16 @@ interface Plugin<In, Out> {
 Anchors run once per parent with all its children. That way a parent can have one anchor point per group (fixed sides) or one per edge (nearest sides, boundary intersection).
 
 Routers receive one `EdgeGroup` at a time, so they can draw shared geometry such as a bus trunk.
+
+### 3.1 Depth limit
+
+A global **Max depth** setting decides how many levels are drawn. It is not a plugin option, so it works the same with every node layout, anchor and router.
+
+- Levels are counted from the top: the top-level teams in the file are level 1. The invisible root is not counted.
+- The default is **All**, so every team is drawn.
+- When the limit is *N*, `pipeline/` prunes the tree to levels 1–*N* before the node layout runs. Plugins only ever see the pruned tree. They need no depth-limit logic, and a pruned team is a leaf to them, for example in the compact rule and in leaf-count sizing.
+- Each drawn team whose children were cut off records how many teams it hides (`hiddenDescendants`). The renderer shows this as a small "+N" badge on the shape, so a pruned team can be told apart from a real leaf. The badge is also included in the tooltip and in exported SVG.
+- Pruning never changes the YAML text.
 
 ## 4. Plugins
 
@@ -198,7 +209,9 @@ The UI dropdowns, the settings panels and the contract tests all read the regist
 - **Toolbar:** New, Open, Save, Save As, Samples, Export SVG, Fit.
 - **Left pane:** YAML editor (CodeMirror 6, YAML mode, error markers).
 - **Centre:** the chart, as an SVG with pan (drag) and zoom (wheel).
-- **Right sidebar:** three collapsible sections, *Node layout*, *Anchors* and *Edges*. Each has a plugin dropdown, controls generated from the plugin's `optionsSchema`, and "reset to defaults".
+- **Right sidebar:**
+  - At the top, a *Diagram* section with the **Max depth** selector (section 3.1). Its choices are All, then 1 up to the deepest level in the current file. If an edit makes the file shallower than the selected limit, the selection stays and simply has no effect.
+  - Below it, three collapsible sections, *Node layout*, *Anchors* and *Edges*. Each has a plugin dropdown, controls generated from the plugin's `optionsSchema`, and "reset to defaults".
 
 ### Files
 
@@ -212,16 +225,16 @@ The UI dropdowns, the settings panels and the contract tests all read the regist
 ### Live updates
 
 - Redraws 200 ms after the last keystroke.
-- The view stays put while typing. It resets to fit only on file load, on a node-layout change, or when **Fit** is pressed.
+- The view stays put while typing. It resets to fit only on file load, on a node-layout change, on a max-depth change, or when **Fit** is pressed.
 
 ### Settings persistence
 
-The selected plugin on each axis and every plugin's options are stored in `localStorage`, read and written inside try/catch, with defaults used if storage is unavailable. They are never written into the YAML file.
+The max depth, the selected plugin on each axis, and every plugin's options are stored in `localStorage`, read and written inside try/catch, with defaults used if storage is unavailable. They are never written into the YAML file.
 
 ### Export
 
 - A self-contained SVG of exactly what is on screen, with styles and font settings embedded.
-- Filename: `<file-name>.<layout>-<router>-<anchor>.svg`, for example `orgchart.compact-orthogonal-bus-auto.svg`.
+- Filename: `<file-name>.<layout>-<router>-<anchor>.svg`, for example `orgchart.compact-orthogonal-bus-auto.svg`. When a depth limit is active, `-depth<N>` is appended, for example `orgchart.compact-orthogonal-bus-auto-depth3.svg`.
 
 ## 6. Error handling
 
@@ -239,9 +252,14 @@ The selected plugin on each axis and every plugin's options are stored in `local
 **Unit tests (Vitest).** Tests use a fake `measure` (fixed width per character) for deterministic results.
 
 - `model`: valid trees, several top-level teams, repeated names under different parents, and each error type with the correct line number.
-- `render`: a tiny scene produces the expected shapes, labels, paths and `<title>` elements.
+- `pipeline` depth limit:
+  - All leaves the tree unchanged.
+  - Limit *N* keeps exactly levels 1–*N*.
+  - `hiddenDescendants` counts every hidden team below a pruned team, not just its direct children.
+  - A limit deeper than the tree changes nothing.
+- `render`: a tiny scene produces the expected shapes, labels, paths, `<title>` elements and "+N" badges.
 
-**Contract tests.** These loop over the registries, so new plugins are covered automatically. Each plugin runs against the three samples with default options and with the min/max or every choice of each option.
+**Contract tests.** These loop over the registries, so new plugins are covered automatically. Each plugin runs against the three samples with default options and with the min/max or every choice of each option. Each run is repeated with max depth All, 1 and 3.
 
 - Node layouts:
   - every team is placed, with finite coordinates
