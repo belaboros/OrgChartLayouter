@@ -8,7 +8,7 @@
     "build": "svelte-check && vite build",
     "preview": "vite preview --port 4173",
     "test": "vitest run",
-    "bench": "vitest bench --run",
+    "bench": "vitest bench --run --reporter=verbose",
     "e2e": "playwright test"
   },
   "devDependencies": {

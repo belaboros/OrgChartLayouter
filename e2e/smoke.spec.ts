@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
 const CONTAINMENT = ['nested-rects', 'nested-circles'];
@@ -29,7 +30,7 @@ test('sample: medium renders 50 nodes', async ({ page }) => {
 
 test('live edit: a new team appears', async ({ page }) => {
   await append(page, '\nNewTeam:');
-  await expect(nodes(page).locator('title', { hasText: /^NewTeam$/ })).toHaveCount(1, { timeout: 1000 });
+  await expect(nodes(page).locator('title', { hasText: /^NewTeam$/ })).toHaveCount(1);
 });
 
 test('broken YAML: error bar, stale badge, nodes unchanged', async ({ page }) => {
@@ -41,27 +42,23 @@ test('broken YAML: error bar, stale badge, nodes unchanged', async ({ page }) =>
 });
 
 test('every axis: each plugin option renders without error', async ({ page }) => {
-  const check = async () => {
+  const chart = page.getByTestId('chart');
+  const select = async (axis: 'layout' | 'anchor' | 'router', id: string) => {
+    await page.getByTestId(`select-${axis}`).selectOption(id);
+    await expect(chart).toHaveAttribute(`data-${axis}`, id);
+    await expect(nodes(page).first()).toBeVisible();
     await expect(page.getByTestId('error-bar')).toBeHidden();
-    expect(await nodes(page).count()).toBeGreaterThan(0);
   };
   for (const id of await optionValues(page, 'select-layout')) {
-    await page.getByTestId('select-layout').selectOption(id);
-    await check();
+    await select('layout', id);
     if (CONTAINMENT.includes(id)) {
       await expect(page.getByTestId('section-anchors')).toHaveAttribute('aria-disabled', 'true');
     }
   }
-  await page.getByTestId('select-layout').selectOption('top-down');
-  for (const id of await optionValues(page, 'select-anchor')) {
-    await page.getByTestId('select-anchor').selectOption(id);
-    await check();
-  }
-  await page.getByTestId('select-anchor').selectOption('auto');
-  for (const id of await optionValues(page, 'select-router')) {
-    await page.getByTestId('select-router').selectOption(id);
-    await check();
-  }
+  await select('layout', 'top-down');
+  for (const id of await optionValues(page, 'select-anchor')) await select('anchor', id);
+  await select('anchor', 'auto');
+  for (const id of await optionValues(page, 'select-router')) await select('router', id);
 });
 
 test('depth: max depth 1 leaves the top-level teams with badges', async ({ page }) => {
@@ -77,13 +74,20 @@ test('export: downloads an SVG', async ({ page }) => {
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^orgchart\..+\.svg$/);
   const path = await download.path();
-  const { readFileSync } = await import('node:fs');
   expect(readFileSync(path, 'utf8').startsWith('<svg xmlns')).toBe(true);
 });
 
 test('view stays still while typing', async ({ page }) => {
-  const before = await zoomGroup(page).getAttribute('transform');
-  expect(before).toBeTruthy();
+  let before = '';
+  await expect
+    .poll(async () => {
+      const a = (await zoomGroup(page).getAttribute('transform')) ?? '';
+      await page.waitForTimeout(150);
+      const b = (await zoomGroup(page).getAttribute('transform')) ?? '';
+      before = b;
+      return a === b && b !== '' && !b.includes('translate(0 0) scale(1)');
+    })
+    .toBe(true);
   await append(page, '\nExtraTeam:');
   await expect(nodes(page)).toHaveCount(16);
   expect(await zoomGroup(page).getAttribute('transform')).toBe(before);

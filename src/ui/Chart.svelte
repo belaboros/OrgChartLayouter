@@ -13,6 +13,11 @@
   let appliedToken = -1;
 
   const scene = $derived(app.view.scene);
+  // Settings in effect when the currently drawn scene was produced (scene and settings update in one tick).
+  const rendered = $derived.by(() => {
+    scene;
+    return untrack(() => app.settings);
+  });
   const markup = $derived(
     scene ? `<style>${sceneCss(scene.style.fontSize)}</style>${renderSceneMarkup(scene)}` : '',
   );
@@ -47,7 +52,13 @@
   });
 </script>
 
-<div class="chart" data-testid="chart">
+<div
+  class="chart"
+  data-testid="chart"
+  data-layout={scene ? rendered.layoutId : undefined}
+  data-anchor={scene ? rendered.anchorId : undefined}
+  data-router={scene ? rendered.routerId : undefined}
+>
   <svg bind:this={svgEl}>
     <g
       transform="translate({transform.x} {transform.y}) scale({transform.k})"
