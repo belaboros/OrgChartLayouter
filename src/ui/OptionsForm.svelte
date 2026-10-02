@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Options, OptionsSchema } from '../plugins/types';
+  import { parseClamped } from './number-input';
 
   interface Props {
     axis: string;
@@ -14,11 +15,19 @@
     onchange({ ...values, [key]: value });
   }
 
-  function commitNumber(key: string, raw: string, min: number, max: number): void {
-    if (raw.trim() === '') return;
-    const n = Number(raw);
-    if (!Number.isFinite(n)) return;
-    set(key, Math.min(max, Math.max(min, n)));
+  function commitRange(key: string, raw: string, min: number, max: number, step: number): void {
+    const n = parseClamped(raw, min, max, step);
+    if (n !== null) set(key, n);
+  }
+
+  function commitField(el: HTMLInputElement, key: string, min: number, max: number, step: number): void {
+    const n = parseClamped(el.value, min, max, step);
+    if (n === null) {
+      el.value = String(values[key]);
+      return;
+    }
+    el.value = String(n);
+    set(key, n);
   }
 </script>
 
@@ -35,7 +44,7 @@
           value={values[spec.key] as number}
           {disabled}
           aria-label="{spec.label} slider"
-          oninput={(e) => commitNumber(spec.key, e.currentTarget.value, spec.min, spec.max)}
+          oninput={(e) => commitRange(spec.key, e.currentTarget.value, spec.min, spec.max, spec.step)}
         />
         <input
           id="opt-{axis}-{spec.key}"
@@ -46,7 +55,7 @@
           value={values[spec.key] as number}
           {disabled}
           data-testid="option-{axis}-{spec.key}"
-          oninput={(e) => commitNumber(spec.key, e.currentTarget.value, spec.min, spec.max)}
+          onchange={(e) => commitField(e.currentTarget, spec.key, spec.min, spec.max, spec.step)}
         />
       </div>
     {:else if spec.type === 'select'}

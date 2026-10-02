@@ -4,6 +4,7 @@
   import { anchors } from '../anchors/registry';
   import { routers } from '../routers/registry';
   import PluginSection from './PluginSection.svelte';
+  import { parseClamped } from './number-input';
 
   const noEdges = $derived(!app.view.scene?.hasEdges);
   const depthOptions = $derived.by(() => {
@@ -11,11 +12,14 @@
     return Array.from({ length: n }, (_, i) => String(i + 1));
   });
 
-  function clampCommit(raw: string, min: number, max: number, apply: (n: number) => void): void {
-    if (raw.trim() === '') return;
-    const n = Number(raw);
-    if (!Number.isFinite(n)) return;
-    apply(Math.min(max, Math.max(min, n)));
+  function commitField(el: HTMLInputElement, current: number, min: number, max: number, step: number, apply: (n: number) => void): void {
+    const n = parseClamped(el.value, min, max, step);
+    if (n === null) {
+      el.value = String(current);
+      return;
+    }
+    el.value = String(n);
+    apply(n);
   }
 </script>
 
@@ -48,7 +52,7 @@
       step="1"
       data-testid="input-font-size"
       value={app.settings.fontSize}
-      oninput={(e) => clampCommit(e.currentTarget.value, 8, 32, (n) => app.setSettings({ fontSize: n }))}
+      onchange={(e) => commitField(e.currentTarget, app.settings.fontSize, 8, 32, 1, (n) => app.setSettings({ fontSize: n }))}
     />
   </div>
 </details>
@@ -81,7 +85,7 @@
       disabled={noEdges}
       data-testid="input-line-width"
       value={app.settings.lineWidth}
-      oninput={(e) => clampCommit(e.currentTarget.value, 0.5, 6, (n) => app.setSettings({ lineWidth: Math.round(n * 2) / 2 }))}
+      onchange={(e) => commitField(e.currentTarget, app.settings.lineWidth, 0.5, 6, 0.5, (n) => app.setSettings({ lineWidth: n }))}
     />
   </div>
 </PluginSection>
