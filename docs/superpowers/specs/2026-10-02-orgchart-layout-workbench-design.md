@@ -97,11 +97,11 @@ type Shape =
   | { kind: 'circle'; cx: number; cy: number; r: number }
   | { kind: 'dot'; cx: number; cy: number; r: number };
 
-interface PlacedNode { id: string; name: string; depth: number; parentId?: string; hiddenDescendants: number; shape: Shape; label: LabelPlacement }
-interface NodeLayoutResult { nodes: PlacedNode[]; bounds: Rect; direction: 'down' | 'right' | 'outward' | 'none'; hasEdges: boolean }
+interface PlacedNode { id: string; name: string; depth: number; parentId: string | null; hiddenDescendants: number; stacked: boolean; shape: Shape; label: LabelPlacement }
+interface NodeLayoutResult { nodes: PlacedNode[]; bounds: Rect; direction: 'down' | 'right' | 'outward' | 'none'; hasEdges: boolean; origin: Point | null }
 
 interface AnchorPoint { x: number; y: number; side: 'top' | 'bottom' | 'left' | 'right' | 'center' | 'boundary' }
-interface EdgeGroup { parent: PlacedNode; parentAnchor: AnchorPoint; children: { node: PlacedNode; anchor: AnchorPoint }[] }
+interface EdgeGroup { parent: PlacedNode; edges: { child: PlacedNode; from: AnchorPoint; to: AnchorPoint }[] }
 interface RoutedPath { fromId: string; toId: string; d: string /* SVG path data */ }
 
 // Output of pipeline/, input of render/
@@ -117,7 +117,7 @@ interface Plugin<In, Out> {
 
 `OptionsSchema` describes each option: key, label, type (`number` with min/max/step, `select` with choices, or `boolean`), and default.
 
-Anchors run once per parent with all its children. That way a parent can have one anchor point per group (fixed sides) or one per edge (nearest sides, boundary intersection).
+Anchors run once per parent with all its children. Each edge carries its own `from` point, so a parent can use one shared point for every edge (fixed sides) or a different point per edge (nearest sides, boundary intersection). `stacked` marks leaves placed in a compact-layout column. `origin` is the centre of a radial layout.
 
 Routers receive one `EdgeGroup` at a time, so they can draw shared geometry such as a bus trunk.
 
@@ -187,7 +187,7 @@ All anchor rules know the geometry of rects, circles and dots. For a circle, "si
 | `orthogonal-elbow` | Horizontal/vertical segments with a bend halfway. | corner radius |
 | `orthogonal-bus` | Siblings share one trunk line. Each child branches off it. | corner radius, trunk position (0–1 between parent and children) |
 | `curved` | A cubic Bézier per edge, with control points along each anchor's side direction. | curvature |
-| `radial-arc` | Follows the rings of a radial layout: a radial segment plus an arc at the parent's ring. Falls back to `curved` when the layout direction is not `outward`. | — |
+| `radial-arc` | Follows the rings of a radial layout: a radial segment out to the radius midway between the two rings, an arc at that radius, then a radial segment in to the child. Falls back to `curved` when the layout direction is not `outward`. | — |
 
 Shared router options: line width.
 
