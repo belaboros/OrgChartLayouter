@@ -46,6 +46,19 @@ describe('parseTeams', () => {
     expect(errors[0].line).toBe(line);
     expect(errors[0].message).toMatch(message as RegExp);
   });
+  it('rejects an XML-illegal control character in a team name at the key line', () => {
+    expect(parseTeams('"A\\x01":\n')).toEqual({ tree: { roots: [] }, errors: [{ message: 'Team name contains a control character', line: 1 }] });
+    expect(parseTeams('A:\n  B:\n  "C\\x1f":\n').errors).toEqual([{ message: 'Team name contains a control character', line: 3 }]);
+  });
+  it('rejects every C0 control except tab, LF and CR, which XML allows', () => {
+    const allowed = [0x09, 0x0a, 0x0d];
+    for (let c = 0; c < 0x20; c++) {
+      const hex = c.toString(16).padStart(2, '0');
+      const { errors } = parseTeams(`"A\\x${hex}B":\n`);
+      expect(errors.map((e) => e.message), `U+00${hex}`).toEqual(allowed.includes(c) ? [] : ['Team name contains a control character']);
+    }
+    expect(parseTeams('"A\\x7fB":\n').errors).toEqual([]);
+  });
   it('reports YAML syntax errors with a line', () => {
     const { errors } = parseTeams('A:\n  B: [\n');
     expect(errors.length).toBeGreaterThan(0);

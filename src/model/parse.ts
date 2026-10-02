@@ -2,6 +2,9 @@ import { LineCounter, isMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Node, YAMLMap } from 'yaml';
 import type { ParseError, TeamNode, TeamTree } from './types';
 
+// C0 controls that XML 1.0 forbids (tab, LF and CR are allowed); they would make the exported SVG invalid.
+const XML_ILLEGAL_CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/;
+
 export function parseTeams(text: string): { tree: TeamTree; errors: ParseError[] } {
   const lineCounter = new LineCounter();
   const doc = parseDocument(text, { lineCounter, uniqueKeys: true });
@@ -42,6 +45,10 @@ export function parseTeams(text: string): { tree: TeamTree; errors: ParseError[]
       }
       if (key.value.trim() === '') {
         errors.push({ message: 'Team name is empty', line });
+        continue;
+      }
+      if (XML_ILLEGAL_CONTROL.test(key.value)) {
+        errors.push({ message: 'Team name contains a control character', line });
         continue;
       }
       const name = key.value;
