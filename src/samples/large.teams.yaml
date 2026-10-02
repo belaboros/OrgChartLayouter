@@ -1,0 +1,150 @@
+Engineering:
+  R&D:
+    Events:
+      Brand:
+        Events:
+      Manufacturing:
+    Customer Success:
+      Procurement:
+        Customer Success:
+    Recruiting:
+      Accounting:
+  Payments:
+    Cloud:
+      Site Reliability:
+        Cloud:
+    Business Intelligence:
+      Inside Sales:
+    Manufacturing:
+      Logistics:
+  Training:
+    Internal Audit:
+      Pricing:
+        Internal Audit:
+    Infrastructure:
+      Product Management:
+  Brand:
+    Procurement:
+      Design:
+        Procurement:
+    Accounting:
+      Payments:
+Sales:
+  Platform:
+    Public Relations:
+      Content:
+        Public Relations:
+      Partnerships:
+    Legal Affairs:
+      Facilities:
+        Legal Affairs:
+    Payroll:
+      Treasury:
+  Billing:
+    Data Engineering:
+      Networking:
+        Data Engineering:
+    Talent Development:
+      Account Management:
+    Partnerships:
+      Supply Chain:
+  Compliance:
+    Quality Assurance:
+      Strategy:
+        Quality Assurance:
+    Security:
+      Platform:
+  Content:
+    Facilities:
+      Research:
+        Facilities:
+    Treasury:
+      Billing:
+Marketing:
+  Infrastructure:
+    Developer Relations:
+      Events:
+        Developer Relations:
+      Brand:
+    Onboarding:
+      Customer Success:
+        Onboarding:
+    Training:
+      Recruiting:
+  Accounting:
+    Machine Learning:
+      Cloud:
+        Machine Learning:
+    Vendor Management:
+      Business Intelligence:
+  Logistics:
+    Support:
+      Internal Audit:
+        Support:
+    Web:
+      Infrastructure:
+Finance:
+  Security:
+    Release Engineering:
+      Public Relations:
+        Release Engineering:
+      Content:
+    Field Sales:
+      Legal Affairs:
+        Field Sales:
+    Compliance:
+      Payroll:
+  Treasury:
+    Growth:
+      Data Engineering:
+        Growth:
+    Risk:
+      Talent Development:
+  Supply Chain:
+    Analytics:
+      Quality Assurance:
+        Analytics:
+    Mobile:
+      Security:
+Human Resources:
+  Web:
+    Site Reliability:
+      Developer Relations:
+        Site Reliability:
+    Inside Sales:
+      Onboarding:
+    Logistics:
+      Training:
+  Recruiting:
+    Pricing:
+      Machine Learning:
+        Pricing:
+    Product Management:
+      Vendor Management:
+  Manufacturing:
+    Design:
+      Support:
+        Design:
+    Payments:
+      Web:
+Operations:
+  Mobile:
+    Networking:
+      Release Engineering:
+        Networking:
+    Account Management:
+      Field Sales:
+    Supply Chain:
+      Compliance:
+  Payroll:
+    Strategy:
+      Growth:
+        Strategy:
+    Platform:
+      Risk:
+  Partnerships:
+    Research:
+      Analytics:
+        Research:
+    Billing:
+      Mobile:
