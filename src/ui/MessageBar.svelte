@@ -9,7 +9,7 @@
     if (pluginError) {
       return `${AXIS_LABEL[pluginError.axis]} plugin "${pluginError.pluginId}" failed: ${pluginError.message}`;
     }
-    return null;
+    return app.fileMessage;
   });
 </script>
 
