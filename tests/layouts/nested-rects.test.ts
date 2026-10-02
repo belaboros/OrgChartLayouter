@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { parseTeams } from '../../src/model/parse';
 import { nestedRects, ASPECTS } from '../../src/layouts/nested-rects';
 import { resolveOptions } from '../../src/plugins/options';
-import { boxFor, BOX_PAD_X } from '../../src/layouts/label';
+import { boxFor, fitLabel, BOX_PAD_X } from '../../src/layouts/label';
 import { fakeCtx } from '../helpers/fake-measure';
+import { loadTree } from '../helpers/trees';
 import type { NodeLayoutResult, Options, Rect } from '../../src/plugins/types';
 
 const tree = parseTeams('P1:\n  a:\n  b:\n  c:\nP2:\n  d:\n').tree;
@@ -40,16 +41,55 @@ describe('nested-rects', () => {
     expect(p1.h).toBeCloseTo(titleH + 2 * h + 4 + 8);
     expect(p1.w).toBeCloseTo(2 * w + 4 + 8);
   });
-  it('fit: long parent label widens the parent; wide row wraps children top-aligned', () => {
-    const t = parseTeams('Parent:\n  aaaaaaaaaaaaaaaa:\n  b:\n  cc:\n  d:\n').tree;
+  it('fit: wraps in YAML order into rows with unequal widths; rows are padding apart', () => {
+    // widths 64,22,28,22 (h 20), padding 5: target 69.5 -> rows [aaaaaaaa] [b cc] [d]
+    const t = parseTeams('Parent:\n  aaaaaaaa:\n  b:\n  cc:\n  d:\n').tree;
     const r = run({ padding: 5 }, t);
-    const rows = new Set(['aaaaaaaaaaaaaaaa', 'b', 'cc', 'd'].map((n) => rect(r, n).y));
-    expect(rows.size).toBeGreaterThan(1);
-    const b = rect(r, 'b');
-    const cc = rect(r, 'cc');
-    if (b.y === cc.y) expect(cc.x - (b.x + b.w)).toBe(5);
     const p = rect(r, 'Parent');
-    expect(p.w).toBeGreaterThanOrEqual(boxFor('Parent', fakeCtx).w + 10);
+    const [a, b, cc, d] = ['aaaaaaaa', 'b', 'cc', 'd'].map((n) => rect(r, n));
+    const x0 = p.x + 5;
+    const y0 = p.y + 5 + titleH;
+    expect([a.x, a.y]).toEqual([x0, y0]);
+    expect([b.x, b.y]).toEqual([x0, y0 + 20 + 5]);
+    expect([cc.x, cc.y]).toEqual([x0 + 22 + 5, y0 + 25]);
+    expect([d.x, d.y]).toEqual([x0, y0 + 50]);
+    // widest row (64) beats the label (Parent = 52) -> w = 64 + 2*5; h = title + 3 rows + 2 gaps + 2*5
+    expect(p.w).toBe(74);
+    expect(p.h).toBe(titleH + 60 + 10 + 10);
+  });
+  it('fit: a label wider than the content widens the parent', () => {
+    const t = parseTeams('AVeryLongParentLabel:\n  a:\n').tree;
+    const p = rect(run({ padding: 5 }, t), 'AVeryLongParentLabel');
+    expect(p.w).toBe(boxFor('AVeryLongParentLabel', fakeCtx).w + 10);
+  });
+  it('fit: rows are top-aligned when a sub-parent sits next to a shorter leaf', () => {
+    // S (30x72: two stacked leaves) then leaf lf (28x20) share a row at padding 4
+    const t = parseTeams('Top:\n  S:\n    x:\n    y:\n  lf:\n').tree;
+    const r = run({ padding: 4 }, t);
+    const S = rect(r, 'S');
+    const lf = rect(r, 'lf');
+    expect([S.w, S.h]).toEqual([30, 72]);
+    expect([lf.w, lf.h]).toEqual([28, 20]);
+    expect(lf.y).toBe(S.y);
+    expect(lf.x).toBe(S.x + S.w + 4);
+    const top = rect(r, 'Top');
+    expect([S.x - top.x, S.y - top.y]).toEqual([4, 4 + titleH]);
+    expect([top.w, top.h]).toEqual([30 + 4 + 28 + 8, titleH + 72 + 8]);
+  });
+  it('fit: top-level teams share a row padding apart, from the origin', () => {
+    const r = run({ padding: 4 });
+    const p1 = rect(r, 'P1');
+    const p2 = rect(r, 'P2');
+    expect([p1.x, p1.y, p1.w, p1.h]).toEqual([0, 0, 56, 72]);
+    expect([p2.x, p2.y]).toEqual([p1.x + p1.w + 4, 0]);
+  });
+  it('fit: top-level teams break into a new row', () => {
+    const flat = parseTeams('a:\nb:\nc:\nd:\n').tree;
+    const r = run({ padding: 4 }, flat);
+    expect([rect(r, 'a').x, rect(r, 'a').y]).toEqual([0, 0]);
+    expect([rect(r, 'b').x, rect(r, 'b').y]).toEqual([26, 0]);
+    expect([rect(r, 'c').x, rect(r, 'c').y]).toEqual([0, 24]);
+    expect([rect(r, 'd').x, rect(r, 'd').y]).toEqual([26, 24]);
   });
   it('fit: top-level teams wrap from origin 0,0 with no outer padding', () => {
     const r = run({ padding: 8 });
@@ -64,12 +104,12 @@ describe('nested-rects', () => {
     const a = rect(r, 'a');
     expect(node(r, 'a').label).toMatchObject({ x: a.x + a.w / 2, y: a.y + a.h / 2, anchor: 'middle' });
   });
-  it('treemap: truncates a label that does not fit', () => {
-    const t = parseTeams('Averyveryverylongparentname:\n  x:\n').tree;
-    const r = run({ sizing: 'equal', padding: 0 }, t);
-    const p = rect(r, 'Averyveryverylongparentname');
-    const text = node(r, 'Averyveryverylongparentname').label.text;
-    expect(text.length * 6 + 2 * BOX_PAD_X <= Math.max(p.w, 0) || text.endsWith('…') || text === '').toBe(true);
+  it('treemap: a parent label that does not fit is truncated by fitLabel', () => {
+    const name = 'Averyveryverylongparentname';
+    const r = run({ sizing: 'equal', padding: 0 }, parseTeams(`${name}:\n  x:\n`).tree);
+    const expected = fitLabel(name, Math.max(0, rect(r, name).w - 2 * BOX_PAD_X), fakeCtx);
+    expect(expected.endsWith('…')).toBe(true);
+    expect(node(r, name).label.text).toBe(expected);
   });
   it('leaf-count: sibling areas follow leaf counts (padding 0)', () => {
     const r = run({ sizing: 'leaf-count', padding: 0 });
@@ -98,10 +138,41 @@ describe('nested-rects', () => {
     const b = run({ sizing: 'leaf-count', aspect: a, padding: 0 }).bounds;
     expect(b.w / b.h).toBeCloseTo(ASPECTS[a], 2);
   });
-  it.each(['16:9', 'A4'])('fit: overall shape leans toward aspect %s', (a) => {
-    const flat = parseTeams(Array.from({ length: 30 }, (_, i) => `t${i}:`).join('\n') + '\n').tree;
-    const b = run({ aspect: a, padding: 4 }, flat).bounds;
-    const ratio = b.w / b.h;
-    expect(Math.abs(Math.log(ratio / ASPECTS[a]))).toBeLessThan(Math.log(2));
+  it('fit: overall ratio is ordered by aspect (flat teams)', () => {
+    const flat = parseTeams(Array.from({ length: 100 }, (_, i) => `t${i}:`).join('\n') + '\n').tree;
+    const ratio = (a: string) => {
+      const b = run({ aspect: a, padding: 4 }, flat).bounds;
+      return b.w / b.h;
+    };
+    const rs = ['16:9', '4:3', '1:1', 'A4'].map(ratio);
+    expect(rs[0]).toBeGreaterThan(rs[1]);
+    expect(rs[1]).toBeGreaterThan(rs[2]);
+    expect(rs[2]).toBeGreaterThan(rs[3]);
+  });
+  it('fit: a parent wraps its children differently per aspect', () => {
+    const t = parseTeams('P:\n' + 'abcdef'.split('').map((c) => `  ${c}:\n`).join('')).tree;
+    const wide = rect(run({ aspect: '16:9', padding: 4 }, t), 'P');
+    const tall = rect(run({ aspect: 'A4', padding: 4 }, t), 'P');
+    expect(wide.w / wide.h).toBeGreaterThan(tall.w / tall.h);
+  });
+  it.each(['leaf-count', 'equal'])('%s with heavy padding: every child lies in its parent inner box', (sizing) => {
+    for (const file of ['tests/fixtures/chain40.teams.yaml', 'src/samples/medium.teams.yaml']) {
+      const r = run({ sizing, padding: 40 }, loadTree(file));
+      const byId = new Map(r.nodes.map((n) => [n.id, n]));
+      for (const n of r.nodes) {
+        if (!n.parentId) continue;
+        const p = byId.get(n.parentId)!.shape as Rect;
+        const c = n.shape as Rect;
+        const ix = Math.min(p.x + 40, p.x + p.w);
+        const iy = Math.min(p.y + 40 + titleH, p.y + p.h);
+        const iw = Math.max(0, Math.min(p.w - 80, p.x + p.w - ix));
+        const ih = Math.max(0, Math.min(p.h - 80 - titleH, p.y + p.h - iy));
+        const msg = `${file} ${n.name}`;
+        expect(c.x, msg).toBeGreaterThanOrEqual(ix - 0.5);
+        expect(c.y, msg).toBeGreaterThanOrEqual(iy - 0.5);
+        expect(c.x + c.w, msg).toBeLessThanOrEqual(ix + iw + 0.5);
+        expect(c.y + c.h, msg).toBeLessThanOrEqual(iy + ih + 0.5);
+      }
+    }
   });
 });

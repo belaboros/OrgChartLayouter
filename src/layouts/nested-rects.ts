@@ -12,7 +12,7 @@ export const ASPECTS: Record<string, number> = {
   A4: 1 / Math.SQRT2,
 };
 
-interface Sized { team: TeamNode; w: number; h: number; kids: Sized[]; offsets: { x: number; y: number }[]; contentW: number }
+interface Sized { team: TeamNode; w: number; h: number; kids: Sized[]; offsets: { x: number; y: number }[] }
 interface Datum { team?: TeamNode; weight: number; children?: Datum[] }
 
 /** Greedy row wrapping in YAML order. Returns child offsets and the content size. */
@@ -43,12 +43,12 @@ function wrap(items: { w: number; h: number }[], padding: number, aspect: number
 function measure(team: TeamNode, padding: number, aspect: number, titleH: number, ctx: Ctx): Sized {
   if (team.children.length === 0) {
     const b = boxFor(team.name, ctx);
-    return { team, w: b.w, h: b.h, kids: [], offsets: [], contentW: 0 };
+    return { team, w: b.w, h: b.h, kids: [], offsets: [] };
   }
   const kids = team.children.map((c) => measure(c, padding, aspect, titleH, ctx));
   const { offsets, contentW, contentH } = wrap(kids, padding, aspect);
   const w = Math.max(contentW, boxFor(team.name, ctx).w) + 2 * padding;
-  return { team, w, h: titleH + contentH + 2 * padding, kids, offsets, contentW };
+  return { team, w, h: titleH + contentH + 2 * padding, kids, offsets };
 }
 
 export const nestedRects: NodeLayoutPlugin = {
@@ -132,14 +132,23 @@ export const nestedRects: NodeLayoutPlugin = {
         .paddingTop((n) => (n.depth > 0 && n.children ? titleH + padding : padding))(root);
 
       const visit = (n: HierarchyRectangularNode<Datum>, depth: number, parentId: string | null, inside: Rect): void => {
-        // clamp into the parent's inner box (guards against d3 collapse of negative sizes)
+        // clamp into the parent's inner box (below its title strip) (guards against d3 collapse of negative sizes)
         const x0 = Math.min(Math.max(n.x0!, inside.x), inside.x + inside.w);
         const y0 = Math.min(Math.max(n.y0!, inside.y), inside.y + inside.h);
         const x1 = Math.min(Math.max(n.x1!, x0), inside.x + inside.w);
         const y1 = Math.min(Math.max(n.y1!, y0), inside.y + inside.h);
         const r = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
         place(n.data.team!, depth, parentId, r);
-        (n.children ?? []).forEach((c) => visit(c, depth + 1, n.data.team!.id, r));
+        // inner box; when the rect is too small for padding + title it degenerates to a point inside the rect
+        const ix = Math.min(r.x + padding, r.x + r.w);
+        const iy = Math.min(r.y + padding + titleH, r.y + r.h);
+        const innerBox = {
+          x: ix,
+          y: iy,
+          w: Math.max(0, Math.min(r.w - 2 * padding, r.x + r.w - ix)),
+          h: Math.max(0, Math.min(r.h - 2 * padding - titleH, r.y + r.h - iy)),
+        };
+        (n.children ?? []).forEach((c) => visit(c, depth + 1, n.data.team!.id, innerBox));
       };
       (laid.children ?? []).forEach((c) => visit(c, 1, null, { x: 0, y: 0, w: W, h: W / aspect }));
     }
