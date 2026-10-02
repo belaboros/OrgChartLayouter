@@ -135,4 +135,41 @@ describe('app file actions', () => {
     app.exportSvg();
     expect(files.downloadText).not.toHaveBeenCalled();
   });
+
+  it('loading a broken file shows no stale chart from the previous file and disables export', () => {
+    app.loadText('Alpha:\n  Beta:\n', 'good.teams.yaml', null);
+    expect(app.view.scene).not.toBeNull();
+    app.loadText('Alpha:\n  - broken\n', 'bad.teams.yaml', null);
+    expect(app.view.parseErrors.length).toBeGreaterThan(0);
+    expect(app.view.scene).toBeNull();
+    expect(app.view.stale).toBe(false);
+    files.downloadText.mockClear();
+    app.exportSvg();
+    expect(files.downloadText).not.toHaveBeenCalled();
+  });
+
+  it('editing while a save is in flight keeps the file dirty', async () => {
+    const h = { tag: 'saved' } as any;
+    let resolve!: (v: unknown) => void;
+    files.saveTeamsFile.mockReturnValue(new Promise((r) => { resolve = r; }));
+    app.setText('A:\nB:\n');
+    const p = app.save();
+    app.setText('A:\nB:\nC:\n');
+    resolve({ name: 'one.teams.yaml', handle: h });
+    await p;
+    expect(files.saveTeamsFile).toHaveBeenCalledWith('A:\nB:\n', null, 'one.teams.yaml', false);
+    expect(app.dirty).toBe(true);
+    expect(app.fileHandle).toEqual({ tag: 'saved' });
+  });
+
+  it('a save that finishes after another file was loaded does not rename or rebind the new file', async () => {
+    let resolve!: (v: unknown) => void;
+    files.saveTeamsFile.mockReturnValue(new Promise((r) => { resolve = r; }));
+    app.setText('A:\nB:\n');
+    const p = app.save();
+    app.loadText('N:\n', 'new.teams.yaml', null);
+    resolve({ name: 'saved-elsewhere.teams.yaml', handle: {} as any });
+    await p;
+    expect([app.text, app.fileName, app.fileHandle, app.dirty]).toEqual(['N:\n', 'new.teams.yaml', null, false]);
+  });
 });

@@ -31,6 +31,8 @@ export class AppState {
 
   private measure = createCanvasMeasure();
   private timer: ReturnType<typeof setTimeout> | null = null;
+  /** Bumped by every loadText, so an in-flight save can tell the file was replaced under it. */
+  private loadGen = 0;
 
   constructor() {
     this.settings = loadSettings(safeLocalStorage());
@@ -63,10 +65,12 @@ export class AppState {
       clearTimeout(this.timer);
       this.timer = null;
     }
+    this.loadGen++;
     this.text = text;
     this.fileName = name;
     this.fileHandle = handle;
-    this.recompute();
+    // No previous view: a broken new file must not show (or export) the previous file's chart.
+    this.view = computeView(text, this.settings, this.measure, null);
     this.dirty = false;
     this.fitToken++;
   }
@@ -124,11 +128,14 @@ export class AppState {
   }
 
   private async persist(forcePicker: boolean): Promise<void> {
+    const saved = this.text;
+    const gen = this.loadGen;
     try {
-      const r = await saveTeamsFile(this.text, this.fileHandle, this.fileName ?? 'untitled.teams.yaml', forcePicker);
+      const r = await saveTeamsFile(saved, this.fileHandle, this.fileName ?? 'untitled.teams.yaml', forcePicker);
+      if (gen !== this.loadGen) return; // another file was loaded while saving
       this.fileName = r.name;
       this.fileHandle = r.handle;
-      this.dirty = false;
+      this.dirty = this.text !== saved;
       this.fileMessage = null;
     } catch (e) {
       if (!isAbort(e)) this.fileError(e);
