@@ -18,6 +18,8 @@
         basicSetup,
         yaml(),
         linter(null),
+        // File drops are loaded by the window drop handler in App.svelte; CodeMirror must not insert them too.
+        EditorView.domEventHandlers({ drop: (e) => !!e.dataTransfer?.files?.length }),
         EditorView.updateListener.of((u) => {
           if (u.docChanged && !u.transactions.some((t) => t.annotation(external))) {
             app.setText(u.state.doc.toString());

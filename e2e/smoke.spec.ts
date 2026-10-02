@@ -96,3 +96,28 @@ test('view stays still while typing', async ({ page }) => {
   expect(after).toMatch(/^translate\(.+\) scale\(.+\)$/);
   expect(after).not.toContain('NaN');
 });
+
+test('drop a file on the editor: loads it once, no duplicated text', async ({ page }) => {
+  const content = 'Alpha:\nBeta:\n';
+  // CodeMirror reads dropped files with FileReader; the window drop handler uses File.text(). Delay
+  // FileReader so a CodeMirror insert, if one happens, lands after the window handler has loaded the file.
+  await page.evaluate(() => {
+    const read = FileReader.prototype.readAsText;
+    FileReader.prototype.readAsText = function (this: FileReader, blob: Blob, enc?: string) {
+      setTimeout(() => read.call(this, blob, enc), 300);
+    };
+  });
+  await page.getByTestId('editor').locator('.cm-content').evaluate((el, text) => {
+    const dt = new DataTransfer();
+    dt.items.add(new File([text], 'dropped.teams.yaml', { type: 'application/yaml' }));
+    const r = el.getBoundingClientRect();
+    el.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, clientX: r.left + 5, clientY: r.top + 5 }));
+  }, content);
+  await expect(nodes(page)).toHaveCount(2);
+  // past the FileReader delay plus the 200 ms redraw debounce, so a late insert would show
+  await page.waitForTimeout(800);
+  const lines = await page.getByTestId('editor').locator('.cm-line').allTextContents();
+  expect(lines.join('\n')).toBe(content);
+  await expect(nodes(page)).toHaveCount(2);
+  await expect(page).toHaveTitle(/^dropped\.teams\.yaml/);
+});
