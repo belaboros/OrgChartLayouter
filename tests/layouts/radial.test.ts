@@ -107,6 +107,15 @@ describe('radial', () => {
       expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(ea / 2 + eb / 2 + 4 - 1e-6);
     }
   });
+  it('the wrap-around pair (last, first) sets the radius when both are wide', () => {
+    const wide = 'W'.repeat(40);
+    const rr = radial.run(tree(`${wide}:\nS:\n${wide}2:\n`), opts({ nodeStyle: 'boxes' }), fakeCtx);
+    const [a, , c] = rr.nodes.map((n) => n.shape as Rect);
+    const ext = Math.hypot(a.w, a.h);
+    const need = ext + 4; // equal extents, 120 degrees apart
+    expect(dist(rr.nodes[0])).toBeGreaterThanOrEqual(need / (2 * Math.sin(Math.PI / 3)) - 1e-6);
+    expect(c.w).toBe(a.w + 6);
+  });
   it('R2: ring gap covers neighbouring max extents in boxes mode', () => {
     const t = tree(`${'W'.repeat(60)}:\n  ${'V'.repeat(60)}:\n`);
     const rr = radial.run(t, opts({ nodeStyle: 'boxes', ringSpacing: 30 }), fakeCtx);
