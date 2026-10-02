@@ -1,50 +1,50 @@
 Engineering:
-  R&D:
-    Training:
-      Support:
-    Site Reliability:
-  Web:
-    Manufacturing:
-      Procurement:
-    Machine Learning:
-  Accounting:
-    Events:
-      Infrastructure:
-    Internal Audit:
-Sales:
   Platform:
-    Compliance:
-      Analytics:
-    Networking:
-  Mobile:
-    Partnerships:
-      Facilities:
-    Growth:
-  Treasury:
-    Public Relations:
-      Security:
+    Infrastructure:
+      Compute:
+      Storage:
+      Networking:
+    Observability:
+    Developer Tools:
+    Security:
+  R&D:
+    Research:
+    Prototyping:
+    Applied ML:
+  Applications:
+    Web:
+    Mobile:
+    Desktop:
+  Operations:
+    Release Management:
+    Incident Response:
     Quality Assurance:
-Marketing:
-  Infrastructure:
-    Logistics:
-      Design:
-    Cloud:
-  Payments:
-    Brand:
-      Customer Success:
-    Pricing:
-  Recruiting:
-    Developer Relations:
-      Web:
-Finance:
-  Security:
-    Supply Chain:
-      Research:
-    Data Engineering:
-  Billing:
-    Content:
-      Platform:
-    Strategy:
-  Payroll:
-    Release Engineering:
-      Mobile:
+Product:
+  Product Management:
+    Core Product:
+    Growth:
+    Monetization:
+  Design:
+    UX Research:
+    Visual Design:
+    Content Design:
+  Analytics:
+Sales:
+  EMEA:
+    DACH:
+    Nordics:
+    Benelux:
+    France:
+    Iberia:
+    Italy:
+    UK & Ireland:
+    Poland:
+    Middle East:
+  Americas:
+    North America:
+    Latin America:
+    Canada:
+  Operations:
+    Sales Enablement:
+    Deal Desk:
+    CRM Administration:

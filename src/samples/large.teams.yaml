@@ -1,150 +1,150 @@
 Engineering:
-  R&D:
-    Events:
-      Brand:
-        Events:
-      Manufacturing:
-    Customer Success:
-      Procurement:
-        Customer Success:
-    Recruiting:
-      Accounting:
-  Payments:
-    Cloud:
-      Site Reliability:
-        Cloud:
-    Business Intelligence:
-      Inside Sales:
-    Manufacturing:
-      Logistics:
-  Training:
-    Internal Audit:
-      Pricing:
-        Internal Audit:
-    Infrastructure:
-      Product Management:
-  Brand:
-    Procurement:
-      Design:
-        Procurement:
-    Accounting:
-      Payments:
-Sales:
   Platform:
-    Public Relations:
-      Content:
-        Public Relations:
-      Partnerships:
-    Legal Affairs:
-      Facilities:
-        Legal Affairs:
-    Payroll:
-      Treasury:
-  Billing:
-    Data Engineering:
+    Infrastructure:
+      Compute:
+        Kubernetes:
+        Virtual Machines:
+        Serverless:
+      Storage:
+        Block Storage:
+        Object Storage:
+        Backup:
       Networking:
-        Data Engineering:
-    Talent Development:
-      Account Management:
-    Partnerships:
-      Supply Chain:
-  Compliance:
-    Quality Assurance:
-      Strategy:
-        Quality Assurance:
-    Security:
-      Platform:
-  Content:
-    Facilities:
-      Research:
-        Facilities:
-    Treasury:
-      Billing:
-Marketing:
-  Infrastructure:
-    Developer Relations:
-      Events:
-        Developer Relations:
-      Brand:
-    Onboarding:
-      Customer Success:
-        Onboarding:
-    Training:
-      Recruiting:
-  Accounting:
-    Machine Learning:
-      Cloud:
-        Machine Learning:
-    Vendor Management:
-      Business Intelligence:
-  Logistics:
-    Support:
-      Internal Audit:
-        Support:
-    Web:
-      Infrastructure:
-Finance:
-  Security:
-    Release Engineering:
-      Public Relations:
-        Release Engineering:
-      Content:
-    Field Sales:
-      Legal Affairs:
-        Field Sales:
-    Compliance:
-      Payroll:
-  Treasury:
-    Growth:
-      Data Engineering:
-        Growth:
-    Risk:
-      Talent Development:
-  Supply Chain:
-    Analytics:
-      Quality Assurance:
-        Analytics:
-    Mobile:
-      Security:
-Human Resources:
-  Web:
-    Site Reliability:
-      Developer Relations:
-        Site Reliability:
-    Inside Sales:
-      Onboarding:
-    Logistics:
-      Training:
-  Recruiting:
-    Pricing:
-      Machine Learning:
-        Pricing:
-    Product Management:
-      Vendor Management:
-  Manufacturing:
-    Design:
-      Support:
-        Design:
-    Payments:
-      Web:
-Operations:
-  Mobile:
-    Networking:
-      Release Engineering:
-        Networking:
-    Account Management:
-      Field Sales:
-    Supply Chain:
-      Compliance:
-  Payroll:
-    Strategy:
-      Growth:
-        Strategy:
-    Platform:
-      Risk:
-  Partnerships:
+        Load Balancing:
+        DNS:
+        Edge:
+    Observability:
+      Metrics:
+      Logging:
+      Tracing:
+    Developer Tools:
+      Build Systems:
+      CI/CD:
+      Internal Portal:
+  R&D:
     Research:
-      Analytics:
-        Research:
-    Billing:
-      Mobile:
+      Machine Learning:
+      Distributed Systems:
+      Human-Computer Interaction:
+    Prototyping:
+    Patents:
+  Applications:
+    Web:
+      Storefront:
+      Checkout:
+      Accounts:
+    Mobile:
+      iOS:
+      Android:
+      Mobile Platform:
+    Desktop:
+  Security:
+    Application Security:
+    Security Operations:
+    Identity & Access:
+  Operations:
+    Release Management:
+    Incident Response:
+    Quality Assurance:
+Product:
+  Product Management:
+    Core Product:
+    Growth:
+    Monetization:
+  Design:
+    UX Research:
+    Visual Design:
+    Content Design:
+  Analytics:
+    Product Analytics:
+    Experimentation:
+    Data Science:
+Sales:
+  EMEA:
+    DACH:
+      Germany:
+      Austria:
+      Switzerland:
+    Nordics:
+      Sweden:
+      Norway:
+      Denmark:
+      Finland:
+    Benelux:
+    France:
+    Southern Europe:
+      Spain:
+      Italy:
+      Portugal:
+    UK & Ireland:
+  Americas:
+    North America:
+      US East:
+      US West:
+      US Central:
+    Latin America:
+      Brazil:
+      Mexico:
+      Andean Region:
+    Canada:
+  APAC:
+    Japan:
+    Australia & New Zealand:
+    Southeast Asia:
+    India:
+  Operations:
+    Sales Enablement:
+    Deal Desk:
+    CRM Administration:
+    Forecasting:
+Marketing:
+  Brand:
+    Creative Studio:
+    Brand Strategy:
+    Events:
+  Demand Generation:
+    Paid Media:
+    Lifecycle Email:
+    SEO:
+  Product Marketing:
+    Launches:
+    Competitive Intelligence:
+    Pricing & Packaging:
+Customer Success:
+  Support Centers:
+    Dublin:
+    Austin:
+    Singapore:
+    Sydney:
+    São Paulo:
+    Tokyo:
+    Bangalore:
+    Toronto:
+    Kraków:
+    Johannesburg:
+  Account Management:
+    Strategic Accounts:
+    Mid-Market:
+    Renewals:
+  Professional Services:
+    Implementation:
+    Training:
+    Solution Architecture:
+  Operations:
+    Support Tooling:
+    Knowledge Base:
+    Workforce Planning:
+Corporate:
+  Finance:
+    Accounting:
+    FP&A:
+    Treasury:
+    Tax:
+  People:
+    Recruiting:
+    HR Business Partners:
+    Learning & Development:
+  Legal:
+    Commercial Contracts:
+    Privacy:
+    Compliance:

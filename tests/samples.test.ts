@@ -33,6 +33,18 @@ describe('samples', () => {
   }
 });
 
+describe('samples: wide all-leaf teams', () => {
+  const wideLeafParents = (nodes: TeamNode[]): TeamNode[] => nodes.flatMap((n) => [
+    ...(n.children.length > 8 && n.children.every((c) => c.children.length === 0) ? [n] : []),
+    ...wideLeafParents(n.children),
+  ]);
+  for (const name of ['medium', 'large']) {
+    it(`${name}: has a team with more than 8 children, all leaves (compact wraps it)`, () => {
+      expect(wideLeafParents(loadTree(`src/samples/${name}.teams.yaml`).roots).length).toBeGreaterThan(0);
+    });
+  }
+});
+
 describe('fixtures', () => {
   const dir = path.resolve(__dirname, 'fixtures');
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.teams.yaml'));
