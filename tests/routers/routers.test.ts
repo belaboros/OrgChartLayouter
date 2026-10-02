@@ -100,6 +100,26 @@ describe('orthogonal-bus', () => {
     const g = group([{ id: 'a', from: A(20, 20, 'bottom'), to: A(0, 20, 'top') }]);
     expect(pts(run('orthogonal-bus', g, { cornerRadius: 0, trunkPosition: 0.5 })[0].d).every((p) => p.y === 20)).toBe(true);
   });
+  it('mixed from-sides: orientation per edge, trunk from the vertical set only', () => {
+    const g = group([
+      { id: 'a', from: A(20, 20, 'bottom'), to: A(0, 100, 'top') },
+      { id: 'b', from: A(30, 10, 'right'), to: A(90, 50, 'left') },
+      { id: 'c', from: A(20, 20, 'bottom'), to: A(60, 60, 'top') },
+    ]);
+    const out = run('orthogonal-bus', g, { cornerRadius: 0, trunkPosition: 0.5 });
+    expect(pts(out[0].d)).toEqual([{ x: 20, y: 20 }, { x: 20, y: 40 }, { x: 0, y: 40 }, { x: 0, y: 100 }]);
+    expect(pts(out[2].d)).toEqual([{ x: 20, y: 20 }, { x: 20, y: 40 }, { x: 60, y: 40 }, { x: 60, y: 60 }]);
+    expect(pts(out[1].d)).toEqual([{ x: 30, y: 10 }, { x: 60, y: 10 }, { x: 60, y: 50 }, { x: 90, y: 50 }]);
+  });
+  it('stacked edges do not set the trunk', () => {
+    const g = group([
+      { id: 'a', from: A(20, 20, 'bottom'), to: A(40, 30, 'left') },
+      { id: 'b', from: A(20, 20, 'bottom'), to: A(0, 100, 'top') },
+    ]);
+    const out = run('orthogonal-bus', g, { cornerRadius: 0, trunkPosition: 0.5 });
+    expect(pts(out[0].d)).toEqual([{ x: 20, y: 20 }, { x: 20, y: 30 }, { x: 40, y: 30 }]);
+    expect(pts(out[1].d)).toEqual([{ x: 20, y: 20 }, { x: 20, y: 60 }, { x: 0, y: 60 }, { x: 0, y: 100 }]);
+  });
   it('stacked children behave like elbow', () => {
     const g = group([{ id: 'a', from: A(20, 20, 'bottom'), to: A(40, 80, 'left') }]);
     expect(pts(run('orthogonal-bus', g, { cornerRadius: 0, trunkPosition: 0.5 })[0].d)).toEqual(

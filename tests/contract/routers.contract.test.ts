@@ -45,6 +45,15 @@ describe('router contract', () => {
                   expect(near(all[0].x, e.from.x) && near(all[0].y, e.from.y), `start of ${p.fromId}->${p.toId}`).toBe(true);
                   const last = all[all.length - 1];
                   expect(near(last.x, e.to.x) && near(last.y, e.to.y), `end of ${p.fromId}->${p.toId}`).toBe(true);
+                  if (router.id.startsWith('orthogonal-') && (e.from.side === 'top' || e.from.side === 'bottom' || e.from.side === 'left' || e.from.side === 'right')) {
+                    const first = all[1];
+                    const vertical = e.from.side === 'top' || e.from.side === 'bottom';
+                    const axisDelta = vertical ? e.to.y - e.from.y : e.to.x - e.from.x;
+                    if (first && Math.abs(axisDelta) > 0.01 && ro.trunkPosition !== 0) {
+                      const along = vertical ? Math.abs(first.x - all[0].x) : Math.abs(first.y - all[0].y);
+                      expect(along < 0.01, `first segment of ${p.d} does not leave ${e.from.side} along its axis`).toBe(true);
+                    }
+                  }
                   if (router.id.startsWith('orthogonal-') && ro.cornerRadius === 0 && sideAnchors) {
                     let prev = segs[0].pts[0];
                     for (const s of segs.slice(1)) {
