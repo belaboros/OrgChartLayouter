@@ -40,4 +40,60 @@ describe('compact', () => {
   });
   it('option schema', () =>
     expect(compact.optionsSchema.map((o) => o.key)).toEqual(['siblingGap', 'levelGap', 'maxPerColumn']));
+
+  describe('stacked geometry', () => {
+    const SG = 16, LG = 40;
+    const rect = (n: PlacedNode) => n.shape as Rect;
+    const names = ['a', 'bbbbbbbbbb', 'cc', 'dddddd', 'e', 'ffffffffff', 'gg'];
+    const run = (count: number, perCol: number) => {
+      const t = parseTeams(`P:\n${names.slice(0, count).map((x) => `  ${x}:`).join('\n')}\n`).tree;
+      const res = compact.run(t, { ...resolveOptions(compact.optionsSchema), maxPerColumn: perCol }, fakeCtx);
+      const parent = res.nodes.find((n) => n.name === 'P')!;
+      const kids = res.nodes.filter((n) => n.name !== 'P');
+      const byX = new Map<number, PlacedNode[]>();
+      kids.forEach((n) => byX.set(rect(n).x, [...(byX.get(rect(n).x) ?? []), n]));
+      const cols = [...byX.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1]);
+      return { parent, trunk: cx(parent), cols };
+    };
+    const right = (col: PlacedNode[]) => Math.max(...col.map((n) => rect(n).x + rect(n).w));
+
+    it('k=4: two columns each side, nearest columns keep siblingGap from the trunk, columns siblingGap apart', () => {
+      const { trunk, cols } = run(7, 2);
+      expect(cols.length).toBe(4);
+      expect(cols.map((c) => c.length)).toEqual([2, 2, 2, 1]);
+      expect(cols.map((c) => c.map((n) => n.name))).toEqual([['a', 'bbbbbbbbbb'], ['cc', 'dddddd'], ['e', 'ffffffffff'], ['gg']]);
+      expect(right(cols[1])).toBeCloseTo(trunk - SG);
+      expect(rect(cols[2][0]).x).toBeCloseTo(trunk + SG);
+      expect(rect(cols[1][0]).x - right(cols[0])).toBeCloseTo(SG);
+      expect(rect(cols[3][0]).x - right(cols[2])).toBeCloseTo(SG);
+    });
+    it('k=3: floor(3/2)=1 column on the left, 2 on the right', () => {
+      const { trunk, cols } = run(5, 2);
+      expect(cols.length).toBe(3);
+      expect(cols.filter((c) => cx(c[0]) < trunk).length).toBe(1);
+      expect(right(cols[0])).toBeCloseTo(trunk - SG);
+      expect(rect(cols[1][0]).x).toBeCloseTo(trunk + SG);
+    });
+    it('boxes within a column are left-aligned', () => {
+      const { cols } = run(7, 2);
+      for (const c of cols) expect(new Set(c.map((n) => rect(n).x)).size).toBe(1);
+      expect(rect(cols[0][0]).w).not.toBeCloseTo(rect(cols[0][1]).w);
+    });
+    it('columns are top-aligned, levelGap below the parent, with siblingGap between rows', () => {
+      const { parent, cols } = run(7, 2);
+      for (const c of cols) expect(rect(c[0]).y).toBeCloseTo(rect(parent).y + rect(parent).h + LG);
+      for (const c of cols.slice(0, 3)) expect(rect(c[1]).y - (rect(c[0]).y + rect(c[0]).h)).toBeCloseTo(SG);
+    });
+  });
+  describe('mixed group geometry', () => {
+    const t = parseTeams('P:\n  X:\n    X1:\n  Y:\n  Z:\n    Z1:\n    Z2:\n').tree;
+    const res = compact.run(t, resolveOptions(compact.optionsSchema), fakeCtx);
+    const nd = (name: string) => res.nodes.find((n) => n.name === name)!;
+    const rect = (n: PlacedNode) => n.shape as Rect;
+    it('parent is centred between first and last child centres', () =>
+      expect(cx(nd('P'))).toBeCloseTo((cx(nd('X')) + cx(nd('Z'))) / 2));
+    it('children sit levelGap below the parent', () => {
+      for (const c of ['X', 'Y', 'Z']) expect(rect(nd(c)).y).toBeCloseTo(rect(nd('P')).y + rect(nd('P')).h + 40);
+    });
+  });
 });
