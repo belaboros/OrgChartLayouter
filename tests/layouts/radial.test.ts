@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { parseTeams } from '../../src/model/parse';
 import { radial } from '../../src/layouts/radial';
 import { resolveOptions } from '../../src/plugins/options';
-import { shapeCenter } from '../../src/geometry/rect';
+import { shapeCenter, shapeRect, unionRects } from '../../src/geometry/rect';
 import { boxFor } from '../../src/layouts/label';
 import { fakeCtx } from '../helpers/fake-measure';
 import { loadTree } from '../helpers/trees';
@@ -121,6 +121,27 @@ describe('radial', () => {
     const rr = radial.run(t, opts({ nodeStyle: 'boxes', ringSpacing: 30 }), fakeCtx);
     const ext = (n: PlacedNode) => Math.hypot((n.shape as Rect).w, (n.shape as Rect).h);
     expect(dist(rr.nodes[1]) - dist(rr.nodes[0])).toBeGreaterThanOrEqual((ext(rr.nodes[0]) + ext(rr.nodes[1])) / 2 + 4 - 1e-6);
+  });
+  it('R16: dots mode on the small sample keeps every label far end inside bounds', () => {
+    const small = loadTree('src/samples/small.teams.yaml');
+    const rr = radial.run(small, opts(), fakeCtx);
+    const b = rr.bounds;
+    const inside = (x: number, y: number) => x >= b.x - 0.5 && x <= b.x + b.w + 0.5 && y >= b.y - 0.5 && y <= b.y + b.h + 0.5;
+    for (const n of rr.nodes) {
+      const c = shapeCenter(n.shape);
+      const th = Math.atan2(c.y, c.x);
+      const len = fakeCtx.measure(n.label.text, fakeCtx.fontSize).width;
+      const far = { x: n.label.x + len * Math.cos(th), y: n.label.y + len * Math.sin(th) };
+      expect(inside(far.x, far.y), `${n.name} label far end outside bounds`).toBe(true);
+      const half = fakeCtx.measure(n.label.text, fakeCtx.fontSize).height / 2;
+      for (const s of [-1, 1]) {
+        expect(inside(far.x - s * half * Math.sin(th), far.y + s * half * Math.cos(th)), `${n.name} label corner`).toBe(true);
+      }
+    }
+    // the labels, not just the dots, define the extent: bounds are wider than the dots alone
+    const dots = unionRects(rr.nodes.map((n) => shapeRect(n.shape)));
+    expect(b.w).toBeGreaterThan(dots.w + 20);
+    expect(b.h).toBeGreaterThan(dots.h + 20);
   });
   it('empty tree gives empty result', () => {
     const rr = radial.run({ roots: [] }, opts(), fakeCtx);

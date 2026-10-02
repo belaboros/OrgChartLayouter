@@ -8,6 +8,7 @@ import { CONTRACT_TREES } from '../helpers/trees';
 import { optionVariants } from '../helpers/variants';
 import { contains, overlaps } from '../helpers/geometry';
 import { shapeRect, unionRects } from '../../src/geometry/rect';
+import { labelExtent } from '../../src/layouts/label';
 
 const EPS = 0.5;
 
@@ -52,9 +53,10 @@ describe('layout contract', () => {
               if (result.nodes.length > 0) {
                 expect(result.bounds.w).toBeGreaterThan(0);
                 expect(result.bounds.h).toBeGreaterThan(0);
-                const u = unionRects(result.nodes.map((n) => shapeRect(n.shape)));
+                // R16: bounds = union of shape rects and label extents
+                const u = unionRects(result.nodes.flatMap((n) => [shapeRect(n.shape), labelExtent(n, fakeCtx)]));
                 for (const key of ['x', 'y', 'w', 'h'] as const) {
-                  expect(Math.abs(result.bounds[key] - u[key]), `bounds.${key} is not the union`).toBeLessThanOrEqual(EPS);
+                  expect(Math.abs(result.bounds[key] - u[key]), `bounds.${key} is not the union of shapes and labels`).toBeLessThanOrEqual(EPS);
                 }
               }
 

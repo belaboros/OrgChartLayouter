@@ -3,7 +3,7 @@ import type { TeamNode, TeamTree } from '../model/types';
 import type { NodeLayoutPlugin, NodeLayoutResult, PlacedNode, Rect } from '../plugins/types';
 import { getNumber, getString } from '../plugins/options';
 import { shapeRect, unionRects } from '../geometry/rect';
-import { boxFor, fitLabel } from './label';
+import { boxFor, fitLabel, labelExtent } from './label';
 
 const DOT_R = 4;
 const DOT_LABEL_OFFSET = 8;
@@ -103,7 +103,7 @@ export const radial: NodeLayoutPlugin = {
         label: { text, x: cx + DOT_LABEL_OFFSET * cos, y: cy + DOT_LABEL_OFFSET * sin, anchor: cos >= 0 ? 'start' : 'end', rotate: readableRotation((it.theta * 180) / Math.PI) },
       };
     });
-    const bounds: Rect = unionRects(nodes.map((n) => shapeRect(n.shape)));
+    const bounds: Rect = unionRects(nodes.flatMap((n) => [shapeRect(n.shape), labelExtent(n, ctx)]));
     return { nodes, bounds, direction: 'outward', hasEdges: true, origin: { x: 0, y: 0 } };
   },
 };
