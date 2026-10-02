@@ -52,13 +52,17 @@ export function renderSceneMarkup(scene: Scene): string {
   return edges + nodes.join('');
 }
 
+export function sceneCss(fontSize: number): string {
+  return `.node text{font-family:system-ui, sans-serif;font-size:${num(fontSize)}px;fill:#1f2937}`
+    + '.edge{stroke:#6b7280;fill:none}.badge rect{fill:#374151}.badge text{fill:#fff;font-size:10px}'
+    + '.node rect,.node circle{stroke:#9ca3af;stroke-width:1}';
+}
+
 export function renderSvgDocument(scene: Scene): string {
   const b = scene.bounds;
   const w = num(b.w + 2 * MARGIN);
   const h = num(b.h + 2 * MARGIN);
-  const style = `.node text{font-family:system-ui, sans-serif;font-size:${num(scene.style.fontSize)}px;fill:#1f2937}`
-    + '.edge{stroke:#6b7280;fill:none}.badge rect{fill:#374151}.badge text{fill:#fff;font-size:10px}'
-    + '.node rect,.node circle{stroke:#9ca3af;stroke-width:1}';
+  const style = sceneCss(scene.style.fontSize);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${num(b.x - MARGIN)} ${num(b.y - MARGIN)} ${w} ${h}" width="${w}" height="${h}">`
     + `<style>${style}</style>${renderSceneMarkup(scene)}</svg>`;
 }
