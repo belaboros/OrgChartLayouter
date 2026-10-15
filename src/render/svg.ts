@@ -8,6 +8,8 @@ export const escapeXml = (s: string): string => s.replace(/[&<>"']/g, (c) => XML
 const BADGE_HEIGHT = 14;
 const BADGE_FONT_SIZE = 10;
 const MARGIN = 20;
+/** The chart background (Chart.svelte), so a label halo blends in. */
+const HALO_COLOR = '#fafafa';
 
 function renderEdge(e: RoutedPath, lineWidth: number): string {
   return `<path class="edge" d="${escapeXml(e.d)}" fill="none" stroke-width="${num(lineWidth)}"/>`;
@@ -25,7 +27,9 @@ function renderShape(n: PlacedNode, fill: string): string {
 function renderLabel(n: PlacedNode): string {
   const { text, x, y, anchor, rotate } = n.label;
   const tf = rotate !== 0 ? ` transform="rotate(${num(rotate)} ${num(x)} ${num(y)})"` : '';
-  return `<text x="${num(x)}" y="${num(y)}" text-anchor="${anchor}"${tf}>${escapeXml(text)}</text>`;
+  // A dot's label sits outside its shape, where edges can pass under it: the halo keeps it readable.
+  const cls = n.shape.kind === 'dot' ? ' class="halo"' : '';
+  return `<text${cls} x="${num(x)}" y="${num(y)}" text-anchor="${anchor}"${tf}>${escapeXml(text)}</text>`;
 }
 
 /** The badge rect, centred on the top-right corner of the node's shape box and sized to its 10 px text. */
@@ -62,7 +66,8 @@ export function renderSceneMarkup(scene: Scene): string {
 export function sceneCss(fontSize: number): string {
   return `.node text{font-family:system-ui, sans-serif;font-size:${num(fontSize)}px;fill:#1f2937}`
     + `.edge{stroke:#6b7280;fill:none}.badge rect{fill:#374151}.badge text{fill:#fff;font-size:${BADGE_FONT_SIZE}px}`
-    + '.node rect,.node circle{stroke:#9ca3af;stroke-width:1}';
+    + '.node rect,.node circle{stroke:#9ca3af;stroke-width:1}'
+    + `.node text.halo{paint-order:stroke;stroke:${HALO_COLOR};stroke-width:3px;stroke-linejoin:round}`;
 }
 
 export function renderSvgDocument(scene: Scene): string {

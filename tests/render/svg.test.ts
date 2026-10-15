@@ -73,6 +73,13 @@ describe('renderSceneMarkup', () => {
     const rot = renderSceneMarkup(scene([node({ label: { text: 'A', x: 3.14159, y: -0, anchor: 'start', rotate: -90 } })]));
     expect(rot).toContain('<text x="3.142" y="0" text-anchor="start" transform="rotate(-90 3.142 0)">A</text>');
   });
+  it('labels outside their shape (dots) get a halo class; labels inside a shape do not', () => {
+    const dot = renderSceneMarkup(scene([node({ shape: { kind: 'dot', cx: 0, cy: 0, r: 4 }, label: { text: 'A', x: 8, y: 0, anchor: 'start', rotate: 0 } })]));
+    expect(dot).toContain('<text class="halo" x="8" y="0" text-anchor="start">A</text>');
+    for (const shape of [{ kind: 'rect', x: 0, y: 0, w: 40, h: 20 }, { kind: 'circle', cx: 5, cy: 6, r: 7 }] as const) {
+      expect(renderSceneMarkup(scene([node({ shape })]))).not.toContain('halo');
+    }
+  });
 });
 
 describe('renderSvgDocument', () => {
@@ -84,6 +91,8 @@ describe('renderSvgDocument', () => {
     expect(d).toContain('<style>');
     expect(d).toContain('font-family:system-ui, sans-serif;font-size:14px');
     expect(d).toContain('.badge text{fill:#fff;font-size:10px}');
+    // halo in the chart background colour, painted under the letters
+    expect(d).toContain('.node text.halo{paint-order:stroke;stroke:#fafafa;stroke-width:3px;stroke-linejoin:round}');
     expect(d.endsWith('</svg>')).toBe(true);
     expect(d).toContain(renderSceneMarkup(scene([node({})])));
   });
