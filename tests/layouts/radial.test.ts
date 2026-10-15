@@ -95,14 +95,29 @@ describe('radial', () => {
     expect(rr.nodes.some((n) => n.label.anchor === 'end')).toBe(true);
     expect(rr.nodes.some((n) => n.label.anchor === 'start')).toBe(true);
   });
-  it('labels are truncated to ringSpacing-12 only when a deeper ring exists', () => {
+  it('dots mode shows every team name in full', () => {
+    for (const name of ['medium', 'large']) {
+      const rr = radial.run(loadTree(`src/samples/${name}.teams.yaml`), opts(), fakeCtx);
+      for (const n of rr.nodes) expect(n.label.text).toBe(n.name);
+    }
+  });
+  it('a long label pushes the next ring out instead of being cut', () => {
     const long = 'X'.repeat(40);
     const rr = radial.run(tree(`${long}:\n  ${long}Y:\n`), opts({ ringSpacing: 80 }), fakeCtx);
     const top = rr.nodes.find((n) => n.name === long)!;
     const leaf = rr.nodes.find((n) => n.name === `${long}Y`)!;
-    expect(top.label.text.endsWith('…')).toBe(true);
-    expect(top.label.text.length * 6).toBeLessThanOrEqual(80 - 12);
-    expect(leaf.label.text).toBe(leaf.name);
+    expect(top.label.text).toBe(long);
+    // label offset 8 + label width + margin 12
+    expect(dist(leaf) - dist(top)).toBeCloseTo(8 + fakeCtx.measure(long, fakeCtx.fontSize).width + 12, 6);
+  });
+  it('no dot label reaches the next ring out', () => {
+    const rr = radial.run(loadTree('src/samples/large.teams.yaml'), opts(), fakeCtx);
+    const ringRadius = (d: number) => dist(rr.nodes.find((n) => n.depth === d)!);
+    const maxDepth = Math.max(...rr.nodes.map((n) => n.depth));
+    for (const n of rr.nodes.filter((m) => m.depth < maxDepth)) {
+      const end = dist(n) + 8 + fakeCtx.measure(n.label.text, fakeCtx.fontSize).width;
+      expect(end, n.name).toBeLessThanOrEqual(ringRadius(n.depth + 1) - 12 + 1e-6);
+    }
   });
   it('rings expand so crowded same-depth boxes keep a 4 px gap on some axis', () => {
     const names = Array.from({ length: 30 }, (_, i) => `Team${i}`.padEnd(14, 'x'));

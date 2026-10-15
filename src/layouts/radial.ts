@@ -3,16 +3,18 @@ import type { TeamNode, TeamTree } from '../model/types';
 import type { NodeLayoutPlugin, NodeLayoutResult, PlacedNode, Rect } from '../plugins/types';
 import { getNumber, getString } from '../plugins/options';
 import { shapeRect, unionRects } from '../geometry/rect';
-import { boxFor, fitLabel, labelExtent } from './label';
+import { boxFor, labelExtent } from './label';
 
 const DOT_R = 4;
 const DOT_LABEL_OFFSET = 8;
+/** Clear space between the end of a dot label and the next ring out. */
+const LABEL_MARGIN = 12;
 const GAP = 4;
 const TWO_PI = 2 * Math.PI;
 /** Boxes mode re-places the tree this many times after the first pass, each time spacing angles by the previous pass's needs. */
 const BOX_REFINE_PASSES = 4;
 
-interface Item { team: TeamNode; depth: number; parentId: string | null; theta: number; ext: number; w: number; h: number }
+interface Item { team: TeamNode; depth: number; parentId: string | null; theta: number; ext: number; w: number; h: number; labelW: number }
 interface Datum { team?: TeamNode; children?: Datum[] }
 
 /** Normalises a label rotation in degrees into (-90, 90]. */
@@ -44,10 +46,13 @@ function chordNeeded(a: Item, b: Item, mid: number, boxes: boolean): number {
 function ringRadii(items: Item[], maxDepth: number, ringSpacing: number, boxes: boolean): number[] {
   const radii: number[] = [0];
   let prevMaxExt = 0;
+  let prevMaxLabel = 0;
   for (let d = 1; d <= maxDepth; d++) {
     const ring = items.filter((i) => i.depth === d).sort((a, b) => a.theta - b.theta);
     const maxExt = Math.max(...ring.map((i) => i.ext));
     let r = Math.max(radii[d - 1] + ringSpacing, radii[d - 1] + (prevMaxExt + maxExt) / 2 + GAP);
+    // Dot labels run outward from their dot: the previous ring's longest one must end before this ring.
+    if (!boxes && prevMaxLabel > 0) r = Math.max(r, radii[d - 1] + DOT_LABEL_OFFSET + prevMaxLabel + LABEL_MARGIN);
     if (ring.length >= 2) {
       for (let k = 0; k < ring.length; k++) {
         const a = ring[k];
@@ -58,6 +63,7 @@ function ringRadii(items: Item[], maxDepth: number, ringSpacing: number, boxes: 
     }
     radii[d] = r;
     prevMaxExt = maxExt;
+    prevMaxLabel = Math.max(...ring.map((i) => i.labelW));
   }
   return radii;
 }
@@ -100,6 +106,7 @@ export const radial: NodeLayoutPlugin = {
         w,
         h: bh,
         ext: boxes ? Math.hypot(w, bh) : 2 * DOT_R,
+        labelW: boxes ? 0 : ctx.measure(team.name, ctx.fontSize).width,
       });
     });
     const items = [...itemOf.values()];
@@ -134,11 +141,10 @@ export const radial: NodeLayoutPlugin = {
       if (boxes) {
         return { ...base, shape: { kind: 'rect', x: cx - it.w / 2, y: cy - it.h / 2, w: it.w, h: it.h }, label: { text: it.team.name, x: cx, y: cy, anchor: 'middle', rotate: 0 } };
       }
-      const text = it.depth < maxDepth ? fitLabel(it.team.name, ringSpacing - 12, ctx) : it.team.name;
       return {
         ...base,
         shape: { kind: 'dot', cx, cy, r: DOT_R },
-        label: { text, x: cx + DOT_LABEL_OFFSET * cos, y: cy + DOT_LABEL_OFFSET * sin, anchor: cos >= 0 ? 'start' : 'end', rotate: readableRotation((it.theta * 180) / Math.PI) },
+        label: { text: it.team.name, x: cx + DOT_LABEL_OFFSET * cos, y: cy + DOT_LABEL_OFFSET * sin, anchor: cos >= 0 ? 'start' : 'end', rotate: readableRotation((it.theta * 180) / Math.PI) },
       };
     });
     const bounds: Rect = unionRects(nodes.flatMap((n) => [shapeRect(n.shape), labelExtent(n, ctx)]));
