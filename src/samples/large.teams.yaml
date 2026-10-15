@@ -1,150 +1,151 @@
-Engineering:
-  Platform:
-    Infrastructure:
-      Compute:
-        Kubernetes:
-        Virtual Machines:
-        Serverless:
-      Storage:
-        Block Storage:
-        Object Storage:
-        Backup:
-      Networking:
-        Load Balancing:
-        DNS:
-        Edge:
-    Observability:
-      Metrics:
-      Logging:
-      Tracing:
-    Developer Tools:
-      Build Systems:
-      CI/CD:
-      Internal Portal:
-  R&D:
-    Research:
-      Machine Learning:
-      Distributed Systems:
-      Human-Computer Interaction:
-    Prototyping:
-    Patents:
-  Applications:
-    Web:
-      Storefront:
-      Checkout:
-      Accounts:
-    Mobile:
-      iOS:
-      Android:
-      Mobile Platform:
-    Desktop:
-  Security:
-    Application Security:
-    Security Operations:
-    Identity & Access:
-  Operations:
-    Release Management:
-    Incident Response:
-    Quality Assurance:
-Product:
-  Product Management:
-    Core Product:
-    Growth:
-    Monetization:
-  Design:
-    UX Research:
-    Visual Design:
-    Content Design:
-  Analytics:
-    Product Analytics:
-    Experimentation:
-    Data Science:
-Sales:
-  EMEA:
-    DACH:
-      Germany:
-      Austria:
-      Switzerland:
-    Nordics:
-      Sweden:
-      Norway:
-      Denmark:
-      Finland:
-    Benelux:
-    France:
-    Southern Europe:
-      Spain:
-      Italy:
-      Portugal:
-    UK & Ireland:
-  Americas:
-    North America:
-      US East:
-      US West:
-      US Central:
-    Latin America:
-      Brazil:
-      Mexico:
-      Andean Region:
-    Canada:
-  APAC:
-    Japan:
-    Australia & New Zealand:
-    Southeast Asia:
-    India:
-  Operations:
-    Sales Enablement:
-    Deal Desk:
-    CRM Administration:
-    Forecasting:
-Marketing:
-  Brand:
-    Creative Studio:
-    Brand Strategy:
-    Events:
-  Demand Generation:
-    Paid Media:
-    Lifecycle Email:
-    SEO:
-  Product Marketing:
-    Launches:
-    Competitive Intelligence:
-    Pricing & Packaging:
-Customer Success:
-  Support Centers:
-    Dublin:
-    Austin:
-    Singapore:
-    Sydney:
-    São Paulo:
-    Tokyo:
-    Bangalore:
-    Toronto:
-    Kraków:
-    Johannesburg:
-  Account Management:
-    Strategic Accounts:
-    Mid-Market:
-    Renewals:
-  Professional Services:
-    Implementation:
-    Training:
-    Solution Architecture:
-  Operations:
-    Support Tooling:
-    Knowledge Base:
-    Workforce Planning:
-Corporate:
-  Finance:
-    Accounting:
-    FP&A:
-    Treasury:
-    Tax:
-  People:
-    Recruiting:
-    HR Business Partners:
-    Learning & Development:
-  Legal:
-    Commercial Contracts:
-    Privacy:
-    Compliance:
+ACME:
+  Engineering:
+    Platform:
+      Infrastructure:
+        Compute:
+          Kubernetes:
+          Virtual Machines:
+          Serverless:
+        Storage:
+          Block Storage:
+          Object Storage:
+          Backup:
+        Networking:
+          Load Balancing:
+          DNS:
+          Edge:
+      Observability:
+        Metrics:
+        Logging:
+        Tracing:
+      Developer Tools:
+        Build Systems:
+        CI/CD:
+        Internal Portal:
+    R&D:
+      Research:
+        Machine Learning:
+        Distributed Systems:
+        Human-Computer Interaction:
+      Prototyping:
+      Patents:
+    Applications:
+      Web:
+        Storefront:
+        Checkout:
+        Accounts:
+      Mobile:
+        iOS:
+        Android:
+        Mobile Platform:
+      Desktop:
+    Security:
+      Application Security:
+      Security Operations:
+      Identity & Access:
+    Operations:
+      Release Management:
+      Incident Response:
+      Quality Assurance:
+  Product:
+    Product Management:
+      Core Product:
+      Growth:
+      Monetization:
+    Design:
+      UX Research:
+      Visual Design:
+      Content Design:
+    Analytics:
+      Product Analytics:
+      Experimentation:
+      Data Science:
+  Sales:
+    EMEA:
+      DACH:
+        Germany:
+        Austria:
+        Switzerland:
+      Nordics:
+        Sweden:
+        Norway:
+        Denmark:
+        Finland:
+      Benelux:
+      France:
+      Southern Europe:
+        Spain:
+        Italy:
+        Portugal:
+      UK & Ireland:
+    Americas:
+      North America:
+        US East:
+        US West:
+        US Central:
+      Latin America:
+        Brazil:
+        Mexico:
+        Andean Region:
+      Canada:
+    APAC:
+      Japan:
+      Australia & New Zealand:
+      Southeast Asia:
+      India:
+    Operations:
+      Sales Enablement:
+      Deal Desk:
+      CRM Administration:
+      Forecasting:
+  Marketing:
+    Brand:
+      Creative Studio:
+      Brand Strategy:
+      Events:
+    Demand Generation:
+      Paid Media:
+      Lifecycle Email:
+      SEO:
+    Product Marketing:
+      Launches:
+      Competitive Intelligence:
+      Pricing & Packaging:
+  Customer Success:
+    Support Centers:
+      Dublin:
+      Austin:
+      Singapore:
+      Sydney:
+      São Paulo:
+      Tokyo:
+      Bangalore:
+      Toronto:
+      Kraków:
+      Johannesburg:
+    Account Management:
+      Strategic Accounts:
+      Mid-Market:
+      Renewals:
+    Professional Services:
+      Implementation:
+      Training:
+      Solution Architecture:
+    Operations:
+      Support Tooling:
+      Knowledge Base:
+      Workforce Planning:
+  Corporate:
+    Finance:
+      Accounting:
+      FP&A:
+      Treasury:
+      Tax:
+    People:
+      Recruiting:
+      HR Business Partners:
+      Learning & Development:
+    Legal:
+      Commercial Contracts:
+      Privacy:
+      Compliance:
