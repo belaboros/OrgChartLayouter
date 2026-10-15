@@ -16,7 +16,7 @@ async function drag(page: Page, testId: string, dx: number) {
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
   await page.goto('/');
-  await expect(page.getByTestId('chart').locator('g.node')).toHaveCount(15);
+  await expect(page.getByTestId('chart').locator('g.node')).toHaveCount(16);
 });
 
 test('dragging the left divider resizes the editor and the chart', async ({ page }) => {

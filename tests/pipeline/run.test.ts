@@ -14,7 +14,7 @@ const S: Settings = {
 describe('runPipeline', () => {
   it('default run: one node per team and one edge per non-root team', () => {
     const r = runPipeline(small, S, fakeMeasure); if (!r.ok) throw r;
-    expect(r.scene.nodes).toHaveLength(15);
+    expect(r.scene.nodes).toHaveLength(16);
     expect(r.scene.hasEdges).toBe(true);
     expect(r.scene.edges).toHaveLength(r.scene.nodes.filter((n) => n.parentId).length);
     const ids = new Set(r.scene.nodes.map((n) => n.id));
@@ -41,7 +41,7 @@ describe('runPipeline', () => {
   it('maxDepth 1 keeps only top-level teams with hidden counts', () => {
     const r = runPipeline(small, { ...S, maxDepth: 1 }, fakeMeasure); if (!r.ok) throw r;
     expect(r.scene.nodes.every((n) => n.depth === 1)).toBe(true);
-    expect(r.scene.nodes.reduce((s, n) => s + n.hiddenDescendants + 1, 0)).toBe(15);
+    expect(r.scene.nodes.reduce((s, n) => s + n.hiddenDescendants + 1, 0)).toBe(16);
     expect(r.scene.edges).toHaveLength(0);
   });
 

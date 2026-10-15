@@ -19,13 +19,13 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await expect(nodes(page)).toHaveCount(15);
+  await expect(nodes(page)).toHaveCount(16);
 });
 
-test('sample: medium renders 50 nodes', async ({ page }) => {
+test('sample: medium renders 51 nodes', async ({ page }) => {
   await page.getByTestId('btn-samples').click();
   await page.getByTestId('sample-medium').click();
-  await expect(nodes(page)).toHaveCount(50);
+  await expect(nodes(page)).toHaveCount(51);
 });
 
 test('live edit: a new team appears', async ({ page }) => {
@@ -38,7 +38,7 @@ test('broken YAML: error bar, stale badge, nodes unchanged', async ({ page }) =>
   await expect(page.getByTestId('error-bar')).toBeVisible();
   await expect(page.getByTestId('error-bar')).toContainText('Line');
   await expect(page.getByTestId('stale-badge')).toBeVisible();
-  await expect(nodes(page)).toHaveCount(15);
+  await expect(nodes(page)).toHaveCount(16);
 });
 
 test('every axis: each plugin option renders without error', async ({ page }) => {
@@ -61,10 +61,10 @@ test('every axis: each plugin option renders without error', async ({ page }) =>
   for (const id of await optionValues(page, 'select-router')) await select('router', id);
 });
 
-test('depth: max depth 1 leaves the top-level teams with badges', async ({ page }) => {
-  await page.getByTestId('select-max-depth').selectOption('1');
-  await expect(nodes(page)).toHaveCount(3);
-  // small sample: Engineering, Sales and Operations all have children
+test('depth: max depth 2 leaves the departments with badges', async ({ page }) => {
+  await page.getByTestId('select-max-depth').selectOption('2');
+  await expect(nodes(page)).toHaveCount(4);
+  // small sample: ACME shows its children; Engineering, Sales and Operations hide theirs
   await expect(nodes(page).locator('.badge')).toHaveCount(3);
 });
 
@@ -89,7 +89,7 @@ test('view stays still while typing', async ({ page }) => {
     })
     .toBe(true);
   await append(page, '\nExtraTeam:');
-  await expect(nodes(page)).toHaveCount(16);
+  await expect(nodes(page)).toHaveCount(17);
   expect(await zoomGroup(page).getAttribute('transform')).toBe(before);
   await page.getByTestId('btn-fit').click();
   const after = await zoomGroup(page).getAttribute('transform');

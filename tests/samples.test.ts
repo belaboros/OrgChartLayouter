@@ -7,9 +7,9 @@ import type { TeamNode } from '../src/model/types';
 import { loadTree } from './helpers/trees';
 
 const samples: [string, number, number][] = [
-  ['small', 15, 3],
-  ['medium', 50, 4],
-  ['large', 150, 5],
+  ['small', 16, 4],
+  ['medium', 51, 5],
+  ['large', 151, 6],
 ];
 
 function names(nodes: TeamNode[], parent = ''): { name: string; parent: string }[] {
