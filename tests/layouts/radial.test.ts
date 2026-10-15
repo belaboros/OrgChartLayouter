@@ -17,6 +17,15 @@ const ang = (n: PlacedNode) => {
   return (Math.atan2(c.y, c.x) + 2 * Math.PI) % (2 * Math.PI);
 };
 const tree = (s: string) => parseTeams(s).tree;
+/** Every two boxes are at least 4 px apart along x or along y. */
+const expectBoxesApart = (nodes: PlacedNode[]) => {
+  for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+    const a = nodes[i].shape as Rect, b = nodes[j].shape as Rect;
+    const gapX = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w));
+    const gapY = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h));
+    expect(Math.max(gapX, gapY), `${nodes[i].name} vs ${nodes[j].name}`).toBeGreaterThanOrEqual(4 - 1e-6);
+  }
+};
 
 describe('radial', () => {
   it('outward with origin at 0,0', () => expect([r.direction, r.origin]).toEqual(['outward', { x: 0, y: 0 }]));
@@ -95,27 +104,21 @@ describe('radial', () => {
     expect(top.label.text.length * 6).toBeLessThanOrEqual(80 - 12);
     expect(leaf.label.text).toBe(leaf.name);
   });
-  it('rings expand so crowded same-depth shapes do not touch (boxes, wrap-around included)', () => {
+  it('rings expand so crowded same-depth boxes keep a 4 px gap on some axis', () => {
     const names = Array.from({ length: 30 }, (_, i) => `Team${i}`.padEnd(14, 'x'));
     const t = tree(names.map((n) => `${n}:`).join('\n') + '\n');
     const rr = radial.run(t, opts({ nodeStyle: 'boxes' }), fakeCtx);
     expect(dist(rr.nodes[0])).toBeGreaterThan(80);
-    for (let i = 0; i < rr.nodes.length; i++) for (let j = i + 1; j < rr.nodes.length; j++) {
-      const a = shapeCenter(rr.nodes[i].shape), b = shapeCenter(rr.nodes[j].shape);
-      const ea = Math.hypot((rr.nodes[i].shape as Rect).w, (rr.nodes[i].shape as Rect).h);
-      const eb = Math.hypot((rr.nodes[j].shape as Rect).w, (rr.nodes[j].shape as Rect).h);
-      expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(ea / 2 + eb / 2 + 4 - 1e-6);
-    }
+    expectBoxesApart(rr.nodes);
   });
-  it('the wrap-around pair (last, first) sets the radius when both are wide', () => {
-    const wide = 'W'.repeat(40);
-    const rr = radial.run(tree(`${wide}:\nS:\n${wide}2:\n`), opts({ nodeStyle: 'boxes' }), fakeCtx);
-    const [a, , c] = rr.nodes.map((n) => n.shape as Rect);
-    const ext = Math.hypot(a.w, a.h);
-    const need = ext + 4; // equal extents, 120 degrees apart
-    expect(dist(rr.nodes[0])).toBeGreaterThanOrEqual(need / (2 * Math.sin(Math.PI / 3)) - 1e-6);
-    expect(c.w).toBe(a.w + 6);
-  });
+  for (const [name, maxW, maxH] of [['medium', 1020, 860], ['large', 1800, 1250]] as const) {
+    it(`boxes mode on the ${name} sample stays compact and overlap-free`, () => {
+      const rr = radial.run(loadTree(`src/samples/${name}.teams.yaml`), opts({ nodeStyle: 'boxes' }), fakeCtx);
+      expect(rr.bounds.w).toBeLessThanOrEqual(maxW);
+      expect(rr.bounds.h).toBeLessThanOrEqual(maxH);
+      expectBoxesApart(rr.nodes);
+    });
+  }
   it('R2: ring gap covers neighbouring max extents in boxes mode', () => {
     const t = tree(`${'W'.repeat(60)}:\n  ${'V'.repeat(60)}:\n`);
     const rr = radial.run(t, opts({ nodeStyle: 'boxes', ringSpacing: 30 }), fakeCtx);

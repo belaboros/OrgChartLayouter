@@ -1,4 +1,4 @@
-import { hierarchy, tree as d3tree } from 'd3-hierarchy';
+import { hierarchy, tree as d3tree, type HierarchyNode } from 'd3-hierarchy';
 import type { TeamNode, TeamTree } from '../model/types';
 import type { NodeLayoutPlugin, NodeLayoutResult, PlacedNode, Rect } from '../plugins/types';
 import { getNumber, getString } from '../plugins/options';
@@ -9,6 +9,8 @@ const DOT_R = 4;
 const DOT_LABEL_OFFSET = 8;
 const GAP = 4;
 const TWO_PI = 2 * Math.PI;
+/** Boxes mode re-places the tree this many times after the first pass, each time spacing angles by the previous pass's needs. */
+const BOX_REFINE_PASSES = 4;
 
 interface Item { team: TeamNode; depth: number; parentId: string | null; theta: number; ext: number; w: number; h: number }
 interface Datum { team?: TeamNode; children?: Datum[] }
@@ -19,6 +21,45 @@ function readableRotation(deg: number): number {
   if (d > 270) return d - 360;
   if (d > 90) return d - 180;
   return d;
+}
+
+/**
+ * Chord length that keeps two neighbours on one ring apart. The chord is perpendicular to the ray at
+ * their mid angle, so axis-aligned boxes only need to clear along x or along y: wide boxes stacked at
+ * the sides of the circle need just their heights, not their diagonals.
+ */
+function chordNeeded(a: Item, b: Item, mid: number, boxes: boolean): number {
+  if (!boxes) return a.ext / 2 + b.ext / 2 + GAP;
+  const sin = Math.abs(Math.sin(mid));
+  const cos = Math.abs(Math.cos(mid));
+  const alongX = sin > 1e-9 ? ((a.w + b.w) / 2 + GAP) / sin : Infinity;
+  const alongY = cos > 1e-9 ? ((a.h + b.h) / 2 + GAP) / cos : Infinity;
+  return Math.min(alongX, alongY);
+}
+
+/**
+ * Radius of each ring, given the items' angles: at least ringSpacing past the previous ring, clear of
+ * its shapes, and wide enough that neighbours on the ring (wrap-around included) do not touch.
+ */
+function ringRadii(items: Item[], maxDepth: number, ringSpacing: number, boxes: boolean): number[] {
+  const radii: number[] = [0];
+  let prevMaxExt = 0;
+  for (let d = 1; d <= maxDepth; d++) {
+    const ring = items.filter((i) => i.depth === d).sort((a, b) => a.theta - b.theta);
+    const maxExt = Math.max(...ring.map((i) => i.ext));
+    let r = Math.max(radii[d - 1] + ringSpacing, radii[d - 1] + (prevMaxExt + maxExt) / 2 + GAP);
+    if (ring.length >= 2) {
+      for (let k = 0; k < ring.length; k++) {
+        const a = ring[k];
+        const b = ring[(k + 1) % ring.length];
+        const dTheta = (((b.theta - a.theta) % TWO_PI) + TWO_PI) % TWO_PI;
+        r = Math.max(r, chordNeeded(a, b, a.theta + dTheta / 2, boxes) / (2 * Math.sin(dTheta / 2)));
+      }
+    }
+    radii[d] = r;
+    prevMaxExt = maxExt;
+  }
+  return radii;
 }
 
 export const radial: NodeLayoutPlugin = {
@@ -46,44 +87,41 @@ export const radial: NodeLayoutPlugin = {
 
     const toDatum = (t: TeamNode): Datum => ({ team: t, children: t.children.map(toDatum) });
     const root = hierarchy<Datum>({ children: tree.roots.map(toDatum) }, (d) => d.children);
-    d3tree<Datum>()
-      .size([TWO_PI, 1])
-      .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth)(root);
-
-    const items: Item[] = [];
+    const itemOf = new Map<HierarchyNode<Datum>, Item>();
     root.each((h) => {
       if (!h.data.team) return;
       const team = h.data.team;
       const { w, h: bh } = boxFor(team.name, ctx);
-      items.push({
+      itemOf.set(h, {
         team,
         depth: h.depth,
         parentId: h.parent && h.parent.data.team ? h.parent.data.team.id : null,
-        theta: h.x ?? 0,
+        theta: 0,
         w,
         h: bh,
         ext: boxes ? Math.hypot(w, bh) : 2 * DOT_R,
       });
     });
-
+    const items = [...itemOf.values()];
     const maxDepth = Math.max(...items.map((i) => i.depth));
-    const radii: number[] = [0];
-    let prevMaxExt = 0;
-    for (let d = 1; d <= maxDepth; d++) {
-      const ring = items.filter((i) => i.depth === d).sort((a, b) => a.theta - b.theta);
-      const maxExt = Math.max(...ring.map((i) => i.ext));
-      let r = Math.max(radii[d - 1] + ringSpacing, radii[d - 1] + (prevMaxExt + maxExt) / 2 + GAP);
-      if (ring.length >= 2) {
-        for (let k = 0; k < ring.length; k++) {
-          const a = ring[k];
-          const b = ring[(k + 1) % ring.length];
-          const dTheta = (((b.theta - a.theta) % TWO_PI) + TWO_PI) % TWO_PI;
-          const need = a.ext / 2 + b.ext / 2 + GAP;
-          r = Math.max(r, need / (2 * Math.sin(dTheta / 2)));
-        }
+
+    const place = (separation: (a: HierarchyNode<Datum>, b: HierarchyNode<Datum>) => number): number[] => {
+      d3tree<Datum>().size([TWO_PI, 1]).separation(separation)(root);
+      itemOf.forEach((it, h) => { it.theta = h.x ?? 0; });
+      return ringRadii(items, maxDepth, ringSpacing, boxes);
+    };
+    let radii = place((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
+    // Boxes: re-run d3 with the angle each pair of neighbours really needs at the last pass's angles
+    // and radii, so wide boxes get more of the ring and boxes stacked at the sides get less.
+    if (boxes) {
+      for (let pass = 0; pass < BOX_REFINE_PASSES; pass++) {
+        const prev = radii;
+        radii = place((a, b) => {
+          const ia = itemOf.get(a)!, ib = itemOf.get(b)!;
+          const chord = chordNeeded(ia, ib, (ia.theta + ib.theta) / 2, true);
+          return 2 * Math.asin(Math.min(1, chord / (2 * prev[a.depth])));
+        });
       }
-      radii[d] = r;
-      prevMaxExt = maxExt;
     }
 
     const nodes: PlacedNode[] = items.map((it) => {
